@@ -1,0 +1,6 @@
+echo source ~/.bash_profile >> ~/.bashrc
+yes | cp .bash_profile ~/.bash_profile
+yes | cp .vimrc ~/.vimrc
+mkdir -p /usr/local/bin
+chmod 755 ./sh/dup.sh
+yes | sudo cp ./sh/dup.sh /usr/local/bin/dup.sh
