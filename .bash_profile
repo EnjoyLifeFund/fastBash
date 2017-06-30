@@ -16,9 +16,9 @@ system_VER=64
 # https://gcc.gnu.org/onlinedocs/gcc-4.9.2/gcc/Optimize-Options.html
 # MPIFLAG=" -lelan lmpi"
 # http://www.netlib.org/benchmark/hpl/results.html
-LTOFLAGS="-flto" ## Unknown -flto-compression-level 
+# LTOFLAGS="-flto -m64" ## Unknown -flto-compression-level 
 MAKEJOBS="-j8"
-MachineFLAGS="-m64 -m32 -mmmx -msse $LTOFLAGS" # -lpthread
+MachineFLAGS="-m32 -mmmx -msse $LTOFLAGS" # -lpthread
 MATHFLAGS="-ffast-math -fno-signed-zeros $MachineFLAGS -ffp-contract=fast" #-mfpmath=sse+387 
 alias cc="clang-4.0"
 alias gcc="gcc-7 -Ofast"
@@ -30,10 +30,10 @@ CXXCPP="g++ -E"
 CFLAGS="-Ofast -fomit-frame-pointer $MATHFLAGS -funroll-loops"
 CXXFLAGS="-Ofast  $MATHFLAGS "
 FFLAGS="$CFLAGS  $MATHFLAGS "
-CMAKE_CXX_FLAGS="-Wall -m64 -m32 -Ofast $MATHFLAGS" 
-CMAKE_CFLAGS="-Wall -m64 -m32 -Ofast $MATHFLAGS" 
-CMAKE_C_FLAGS="-Wall -m64 -m32 -Ofast  $MATHFLAGS" 
-CMAKE_CXX_FLAGS_DEBUG="-Wall -m64 -m32 -Ofast  $MATHFLAGS"
+CMAKE_CXX_FLAGS="-Wall -m32 -Ofast $MATHFLAGS" 
+CMAKE_CFLAGS="-Wall -m32 -Ofast $MATHFLAGS" 
+CMAKE_C_FLAGS="-Wall -m32 -Ofast  $MATHFLAGS" 
+CMAKE_CXX_FLAGS_DEBUG="-Wall -m32 -Ofast  $MATHFLAGS"
 
 # -arch x86-64 -arch i386  -Xarch_x86_64
 case $system_VER in
@@ -42,26 +42,25 @@ case $system_VER in
         export FFLAGS="$FFLAGS"
         export CFLAGS="$CFLAGS " #$ARCHFLAGS
         export CPPFLAGS="$CPPFLAGS"
-        export LD_LIBRARY_PATH="/Developer/SDKs/MacOSX.sdk/usr/lib/gcc/i686-apple-darwin11/4.2.1/:$LD_LIBRARY_PATH"
+        # export LD_LIBRARY_PATH="/Developer/SDKs/MacOSX.sdk/usr/lib/gcc/i686-apple-darwin11/4.2.1/:$LD_LIBRARY_PATH"
     ;;
     64) # 
         export LDFLAGS="$LDFLAGS"
         export FFLAGS="$FFLAGS"
         export CFLAGS="$CFLAGS " #$ARCHFLAGS
         export CPPFLAGS="$CPPFLAGS"
-        export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/Developer/SDKs/MacOSX.sdk/usr/lib/gcc/i686-apple-darwin11/4.2.1/"
+        # export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/Developer/SDKs/MacOSX.sdk/usr/lib/gcc/i686-apple-darwin11/4.2.1/"
     ;;
     *)
         export LDFLAGS="$LDFLAGS"
         export FFLAGS="$FFLAGS"
         export CFLAGS="$CFLAGS $ARCHFLAGS"
         export CPPFLAGS="$CPPFLAGS"
-        export LD_LIBRARY_PATH="/usr/lib:$LD_LIBRARY_PATH"
+        # export LD_LIBRARY_PATH="/usr/lib:$LD_LIBRARY_PATH"
     ;;
 esac
 ### EXTRA LIB FLAGS ###
 
-## To be clean up
 LDFLAGS="-L/usr/local/opt/openssl@1.1/lib $LDFLAGS"
 CPPFLAGS="-I/usr/local/opt/openssl@1.1/include $CPPFLAGS"
 LDFLAGS="-L/usr/local/opt/zlib/lib $LDFLAGS"
@@ -76,10 +75,21 @@ LDFLAGS="-L/usr/local/opt/readline/lib $LDFLAGS"
 CPPFLAGS="-I/usr/local/opt/readline/include $CPPFLAGS"
 LDFLAGS="-L/usr/local/opt/bison/lib $LDFLAGS"
 
-## qt support
+## OpenCV3 Support
+LDFLAGS="-L/usr/local/opt/opencv3/lib $LDFLAGS"
+CPPFLAGS="-I/usr/local/opt/opencv3/include $CPPFLAGS"
+export PATH="/usr/local/opt/opencv3/bin:$PATH"
+
+## e2fslib support
+LDFLAGS="-L/usr/local/lib -L$(brew --prefix e2fsprogs)/lib $LDFLAGS"
+export PATH="$(brew --prefix e2fsprogs)/lib:$PATH"
+PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/local/opt/opencv3/lib/pkgconfig"
+## QT Support
 LDFLAGS="-L/usr/local/opt/qt/lib $LDFLAGS"
 CPPFLAGS="-I/usr/local/opt/qt/include $CPPFLAGS"
 PKG_CONFIG_PATH="/usr/local/opt/qt/lib/pkgconfig:$PKG_CONFIG_PATH"
+export PATH="/usr/local/opt/qt/bin:$PATH"
+
 
 ## graphviz support
 export PATH="/usr/local/opt/graphviz/bin:$PATH"
@@ -203,8 +213,6 @@ export PYSPARK_DRIVER_PYTHON=python
 # export PYTHONPATH=$SPARK_HOME/python/lib/py4j-0.10.4-src.zip:$PYTHONPATH
 # export PYSPARK_DRIVER_PYTHON_OPTS=notebook
 
-## QT Setup
-export PATH="/usr/local/opt/qt/bin:$PATH"
 
 ## MAC Developer Commandline Support
 # export PATH=/Library/Developer/CommandLineTools/usr/bin:$PATH
@@ -925,12 +933,12 @@ export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
 ## Show the cpu's strength
 ##
 function ccpu () {
-	if [ "$(uname -os)" == "Linux GNU/Linux" ]; then
+	if [ "$(uname -s)" == "Linux GNU/Linux" ]; then
 	        /bin/cat /proc/cpuinfo &&
 	        lscpu
 	fi
 
-	if [ "$(uname -os)" == "Darwin Darwin" ]; then
+	if [ "$(uname -s)" == "Darwin" ]; then
 	  	   system_profiler SPHardwareDataType
 		   sysctl -n machdep.cpu.brand_string
 	       sysctl hw && 
@@ -943,11 +951,11 @@ function ccpu () {
 ## Show the gpu's strength
 ##
 function cgpu () {
-	if [ "$(uname -os)" == "Linux GNU/Linux" ]; then
+	if [ "$(uname -s)" == "Linux GNU/Linux" ]; then
 	        lspci  -v -s  $(lspci | grep VGA | cut -d" " -f 1) 
 	fi
 
-	if [ "$(uname -os)" == "Darwin Darwin" ]; then
+	if [ "$(uname -s)" == "Darwin" ]; then
 	       glxinfo > gpuinfo && cat gpuinfo
 	       echo "> cat gpuinfo < to see result"
 	fi
@@ -1044,7 +1052,7 @@ function allport() {
 ##
 function cthread () {
     sudo sysctl  -A | grep thread
-	if [ "$(uname -os)" == "Darwin Darwin" ]; then
+	if [ "$(uname -s)" == "Darwin" ]; then
 	    sysctl kern.maxproc
 		sysctl kern.maxvnodes
 		sysctl kern.maxfiles
@@ -2400,7 +2408,8 @@ function allpy3() {
 
 ## This script helps upgrading all installed python3 packages.
 function repip3() {
-	pip3 list | grep -v lxml | grep -v mercurial |  grep -v SQLAlchemy |awk '{print $1}' | xargs pip3 install --upgrade
+	pip3 list | grep -v lxml | grep -v mercurial | grep -v alembic |  grep -v Alchemy | grep -v Twisted |awk '{print "pip3 install --upgrade "$1}' > pip3.update
+	. pip3.update
 }
 
 ## This script generates hello_1~ hello_100 into hello.txt
@@ -2493,15 +2502,26 @@ export PATH="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.
 export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
 export MANPATH="/home/linuxbrew/.linuxbrew/share/man:$MANPATH"
 export INFOPATH="/home/linuxbrew/.linuxbrew/share/info:$INFOPATH"
-export PATH="/usr/local/opt/m4/bin:$PATH"
-export PATH="/usr/local/opt/gettext/bin:$PATH"
-export PATH="/usr/local/opt/bison/bin:$PATH"
+
 
 ## Perl5 upgrade // Run once ?
 # PERL_MM_OPT="INSTALL_BASE=$HOME/perl5" cpan local::lib
 # echo 'eval "$(perl -I$HOME/perl5/lib/perl5 -Mlocal::lib)"' >> ~/.bash_profile
 
-## Reset lib prioirty
+## Rust  & Weld Support
+## curl https://sh.rustup.rs -sSf | sh
+export PATH="$HOME/.cargo/bin:$PATH"
+export WELD_HOME="~/.weld"
+
+## OPT lib support
+export PATH="/usr/local/opt/m4/bin:$PATH"
+export PATH="/usr/local/opt/gettext/bin:$PATH"
+export PATH="/usr/local/opt/bison/bin:$PATH"
+export PATH="/usr/local/opt/gnu-getopt/bin:$PATH"
+export PATH="/usr/local/opt/icu4c/bin:$PATH"
+export PATH="/usr/local/opt/icu4c/sbin:$PATH"
+export PATH="/usr/local/opt/libarchive/bin:$PATH"
+export PATH="/usr/local/opt/libxml2/bin:$PATH"
 export PATH="/usr/local/opt/e2fsprogs/bin:$PATH"
 export PATH="/usr/local/opt/readline/bin:$PATH"
 export PATH="/usr/local/opt/sphinx-doc/bin:$PATH"
