@@ -16,9 +16,9 @@ system_VER=64
 # https://gcc.gnu.org/onlinedocs/gcc-4.9.2/gcc/Optimize-Options.html
 # MPIFLAG=" -lelan lmpi"
 # http://www.netlib.org/benchmark/hpl/results.html
-# LTOFLAGS="-flto -m64" ## Unknown -flto-compression-level 
+LTOFLAGS="-flto" ## Unknown -flto-compression-level 
 MAKEJOBS="-j8"
-MachineFLAGS="-m32 -mmmx -msse $LTOFLAGS" # -lpthread
+MachineFLAGS="-m64 -m32 -mmmx -msse $LTOFLAGS" # -lpthread
 MATHFLAGS="-ffast-math -fno-signed-zeros $MachineFLAGS -ffp-contract=fast" #-mfpmath=sse+387 
 alias cc="clang-4.0"
 alias gcc="gcc-7 -Ofast"
@@ -30,10 +30,10 @@ CXXCPP="g++ -E"
 CFLAGS="-Ofast -fomit-frame-pointer $MATHFLAGS -funroll-loops"
 CXXFLAGS="-Ofast  $MATHFLAGS "
 FFLAGS="$CFLAGS  $MATHFLAGS "
-CMAKE_CXX_FLAGS="-Wall -m32 -Ofast $MATHFLAGS" 
-CMAKE_CFLAGS="-Wall -m32 -Ofast $MATHFLAGS" 
-CMAKE_C_FLAGS="-Wall -m32 -Ofast  $MATHFLAGS" 
-CMAKE_CXX_FLAGS_DEBUG="-Wall -m32 -Ofast  $MATHFLAGS"
+CMAKE_CXX_FLAGS="-Wall -m64 -m32 -Ofast $MATHFLAGS" 
+CMAKE_CFLAGS="-Wall -m64 -m32 -Ofast $MATHFLAGS" 
+CMAKE_C_FLAGS="-Wall -m64 -m32 -Ofast  $MATHFLAGS" 
+CMAKE_CXX_FLAGS_DEBUG="-Wall -m64 -m32 -Ofast  $MATHFLAGS"
 
 # -arch x86-64 -arch i386  -Xarch_x86_64
 case $system_VER in
@@ -42,25 +42,26 @@ case $system_VER in
         export FFLAGS="$FFLAGS"
         export CFLAGS="$CFLAGS " #$ARCHFLAGS
         export CPPFLAGS="$CPPFLAGS"
-        # export LD_LIBRARY_PATH="/Developer/SDKs/MacOSX.sdk/usr/lib/gcc/i686-apple-darwin11/4.2.1/:$LD_LIBRARY_PATH"
+        export LD_LIBRARY_PATH="/Developer/SDKs/MacOSX.sdk/usr/lib/gcc/i686-apple-darwin11/4.2.1/:$LD_LIBRARY_PATH"
     ;;
     64) # 
         export LDFLAGS="$LDFLAGS"
         export FFLAGS="$FFLAGS"
         export CFLAGS="$CFLAGS " #$ARCHFLAGS
         export CPPFLAGS="$CPPFLAGS"
-        # export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/Developer/SDKs/MacOSX.sdk/usr/lib/gcc/i686-apple-darwin11/4.2.1/"
+        export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/Developer/SDKs/MacOSX.sdk/usr/lib/gcc/i686-apple-darwin11/4.2.1/"
     ;;
     *)
         export LDFLAGS="$LDFLAGS"
         export FFLAGS="$FFLAGS"
         export CFLAGS="$CFLAGS $ARCHFLAGS"
         export CPPFLAGS="$CPPFLAGS"
-        # export LD_LIBRARY_PATH="/usr/lib:$LD_LIBRARY_PATH"
+        export LD_LIBRARY_PATH="/usr/lib:$LD_LIBRARY_PATH"
     ;;
 esac
 ### EXTRA LIB FLAGS ###
 
+## To be clean up
 LDFLAGS="-L/usr/local/opt/openssl@1.1/lib $LDFLAGS"
 CPPFLAGS="-I/usr/local/opt/openssl@1.1/include $CPPFLAGS"
 LDFLAGS="-L/usr/local/opt/zlib/lib $LDFLAGS"
@@ -75,21 +76,10 @@ LDFLAGS="-L/usr/local/opt/readline/lib $LDFLAGS"
 CPPFLAGS="-I/usr/local/opt/readline/include $CPPFLAGS"
 LDFLAGS="-L/usr/local/opt/bison/lib $LDFLAGS"
 
-## OpenCV3 Support
-LDFLAGS="-L/usr/local/opt/opencv3/lib $LDFLAGS"
-CPPFLAGS="-I/usr/local/opt/opencv3/include $CPPFLAGS"
-export PATH="/usr/local/opt/opencv3/bin:$PATH"
-
-## e2fslib support
-LDFLAGS="-L/usr/local/lib -L$(brew --prefix e2fsprogs)/lib $LDFLAGS"
-export PATH="$(brew --prefix e2fsprogs)/lib:$PATH"
-PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/local/opt/opencv3/lib/pkgconfig"
-## QT Support
+## qt support
 LDFLAGS="-L/usr/local/opt/qt/lib $LDFLAGS"
 CPPFLAGS="-I/usr/local/opt/qt/include $CPPFLAGS"
 PKG_CONFIG_PATH="/usr/local/opt/qt/lib/pkgconfig:$PKG_CONFIG_PATH"
-export PATH="/usr/local/opt/qt/bin:$PATH"
-
 
 ## graphviz support
 export PATH="/usr/local/opt/graphviz/bin:$PATH"
@@ -150,7 +140,7 @@ JAVA_9=/Library/Java/JavaVirtualMachines/jdk-9.jdk/Contents/Home
 ### For aws server
 #export APACHE_HOME=/home/ec2-user
 #export PATH=$PATH:$APACHE_HOME/apache-maven-3.5.0/bin:$APACHE_HOME/apache-cassandra-3.7/bin
-mvn -version
+
 ## Setting Locale
 ## locale
 # https://www.gnu.org/savannah-checkouts/gnu/libc/manual/html_node/Locale-Categories.html
@@ -213,6 +203,8 @@ export PYSPARK_DRIVER_PYTHON=python
 # export PYTHONPATH=$SPARK_HOME/python/lib/py4j-0.10.4-src.zip:$PYTHONPATH
 # export PYSPARK_DRIVER_PYTHON_OPTS=notebook
 
+## QT Setup
+export PATH="/usr/local/opt/qt/bin:$PATH"
 
 ## MAC Developer Commandline Support
 # export PATH=/Library/Developer/CommandLineTools/usr/bin:$PATH
@@ -228,7 +220,8 @@ export PATH="/Library/Developer/Toolchains/swift-latest.xctoolchain/usr/bin:$PAT
 export PATH="$PATH:/usr/local/opt/tomee-plus/libexec/bin"
 #nodejs support
 # export PATH=$PATH:~/.npm-packages/bin
-export PATH="$PATH:/usr/local/Cellar/node/8.0.0/bin"
+export PATH="$PATH:/usr/local/opt/node/bin:~/.npm/npm/bin"
+
 
 # Android support on MAC
 export ANDROID_HOME=~/Library/Android/sdk
@@ -933,12 +926,12 @@ export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
 ## Show the cpu's strength
 ##
 function ccpu () {
-	if [ "$(uname -s)" == "Linux GNU/Linux" ]; then
+	if [ "$(uname -os)" == "Linux GNU/Linux" ]; then
 	        /bin/cat /proc/cpuinfo &&
 	        lscpu
 	fi
 
-	if [ "$(uname -s)" == "Darwin" ]; then
+	if [ "$(uname -os)" == "Darwin Darwin" ]; then
 	  	   system_profiler SPHardwareDataType
 		   sysctl -n machdep.cpu.brand_string
 	       sysctl hw && 
@@ -951,11 +944,11 @@ function ccpu () {
 ## Show the gpu's strength
 ##
 function cgpu () {
-	if [ "$(uname -s)" == "Linux GNU/Linux" ]; then
+	if [ "$(uname -os)" == "Linux GNU/Linux" ]; then
 	        lspci  -v -s  $(lspci | grep VGA | cut -d" " -f 1) 
 	fi
 
-	if [ "$(uname -s)" == "Darwin" ]; then
+	if [ "$(uname -os)" == "Darwin Darwin" ]; then
 	       glxinfo > gpuinfo && cat gpuinfo
 	       echo "> cat gpuinfo < to see result"
 	fi
@@ -1052,7 +1045,7 @@ function allport() {
 ##
 function cthread () {
     sudo sysctl  -A | grep thread
-	if [ "$(uname -s)" == "Darwin" ]; then
+	if [ "$(uname -os)" == "Darwin Darwin" ]; then
 	    sysctl kern.maxproc
 		sysctl kern.maxvnodes
 		sysctl kern.maxfiles
@@ -1485,6 +1478,7 @@ espeak -vzh+f2 -s 200 "$1"
 ## REQUIRED: brew install espeak ffmpeg
 ## REF : http://espeak.sourceforge.net/commands.html
 ## REF : http://askubuntu.com/questions/178736/generate-mp3-file-from-espeak
+## Teacher REF : https://en.wikipedia.org/wiki/Comparison_of_speech_synthesizers
 
 function fspeakm() {
 if [[ $# -eq 0 ]] ; then
@@ -2379,6 +2373,19 @@ function brewcc () {
     rm  ~/Library/Caches/Homebrew/*
 }
 
+## This script helps relocate nodejs libs to User folder , .npm/lib
+## Verify by using "npm config list"
+## ## vi .npmrc
+
+function rejs() {
+	mkdir -p ~/.npm
+	yes|cp -rf /usr/local/opt/node/lib/node_modules/npm ~/.npm/npm
+	npm config --global set prefix "~/.npm/npm"
+	npm config list
+	npm list -g --depth=1
+}
+
+alias ng1="npm list -g --depth=1"
 ## This script helps reinstalling all brew packages. 
 ## Note: It's good for reinstalled packages from developer's brew repository
 ## git clone https://github.com/ralic/cellar-backup
@@ -2408,8 +2415,7 @@ function allpy3() {
 
 ## This script helps upgrading all installed python3 packages.
 function repip3() {
-	pip3 list | grep -v lxml | grep -v mercurial | grep -v alembic |  grep -v Alchemy | grep -v Twisted |awk '{print "pip3 install --upgrade "$1}' > pip3.update
-	. pip3.update
+	pip3 list | grep -v lxml | grep -v mercurial |  grep -v SQLAlchemy |awk '{print $1}' | xargs pip3 install --upgrade
 }
 
 ## This script generates hello_1~ hello_100 into hello.txt
@@ -2434,6 +2440,8 @@ function pping() {
 }
 
 ## Find only executables
+
+### Move Node.js lib to standard folder.
 
 ### Replacing orginal Mac build 
 
@@ -2502,26 +2510,16 @@ export PATH="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.
 export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
 export MANPATH="/home/linuxbrew/.linuxbrew/share/man:$MANPATH"
 export INFOPATH="/home/linuxbrew/.linuxbrew/share/info:$INFOPATH"
-
+export PATH="/usr/local/opt/m4/bin:$PATH"
+export PATH="/usr/local/opt/gettext/bin:$PATH"
+export PATH="/usr/local/opt/bison/bin:$PATH"
 
 ## Perl5 upgrade // Run once ?
 # PERL_MM_OPT="INSTALL_BASE=$HOME/perl5" cpan local::lib
 # echo 'eval "$(perl -I$HOME/perl5/lib/perl5 -Mlocal::lib)"' >> ~/.bash_profile
 
-## Rust  & Weld Support
-## curl https://sh.rustup.rs -sSf | sh
-export PATH="$HOME/.cargo/bin:$PATH"
-export WELD_HOME="~/.weld"
 
-## OPT lib support
-export PATH="/usr/local/opt/m4/bin:$PATH"
-export PATH="/usr/local/opt/gettext/bin:$PATH"
-export PATH="/usr/local/opt/bison/bin:$PATH"
-export PATH="/usr/local/opt/gnu-getopt/bin:$PATH"
-export PATH="/usr/local/opt/icu4c/bin:$PATH"
-export PATH="/usr/local/opt/icu4c/sbin:$PATH"
-export PATH="/usr/local/opt/libarchive/bin:$PATH"
-export PATH="/usr/local/opt/libxml2/bin:$PATH"
+## Reset lib prioirty
 export PATH="/usr/local/opt/e2fsprogs/bin:$PATH"
 export PATH="/usr/local/opt/readline/bin:$PATH"
 export PATH="/usr/local/opt/sphinx-doc/bin:$PATH"
@@ -2529,3 +2527,6 @@ export PATH="/usr/local/opt/tcl-tk/bin:$PATH"
 export PATH="/usr/local/opt/sqlite/bin:$PATH"
 alias airport="/System/Library/PrivateFrameworks/Apple80211.framework/Resources/airport"
 alias nets="/usr/sbin/networksetup -listallhardwareports"
+
+### List of Setting
+mvn -version
