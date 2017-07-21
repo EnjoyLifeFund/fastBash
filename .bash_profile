@@ -16,9 +16,9 @@ system_VER=64
 # https://gcc.gnu.org/onlinedocs/gcc-4.9.2/gcc/Optimize-Options.html
 # MPIFLAG=" -lelan lmpi"
 # http://www.netlib.org/benchmark/hpl/results.html
-LTOFLAGS="-flto -m64" ## Unknown -flto-compression-level 
+LTOFLAGS="-flto -m64" #-m32  ## Unknown -flto-compression-level  ## LTOFLAS Controls 
 MAKEJOBS="-j8"
-MachineFLAGS="-m32 -mmmx -msse $LTOFLAGS" # -lpthread
+MachineFLAGS="-mmmx -msse $LTOFLAGS" # -lpthread
 MATHFLAGS="-ffast-math -fno-signed-zeros $MachineFLAGS -ffp-contract=fast" #-mfpmath=sse+387 
 alias cc="clang-4.0"
 alias gcc="gcc-7 -Ofast"
@@ -28,12 +28,12 @@ CXX="g++"
 CXXCPP="g++ -E"
 ##http://www.netlib.org/benchmark/hpl/results.html
 CFLAGS="-Ofast -fomit-frame-pointer $MATHFLAGS -funroll-loops"
-CXXFLAGS="-Ofast  $MATHFLAGS "
+CXXFLAGS="-Ofast $MATHFLAGS "
 FFLAGS="$CFLAGS  $MATHFLAGS "
-CMAKE_CXX_FLAGS="-Wall -m32 -Ofast $MATHFLAGS" 
-CMAKE_CFLAGS="-Wall -m32 -Ofast $MATHFLAGS" 
-CMAKE_C_FLAGS="-Wall -m32 -Ofast  $MATHFLAGS" 
-CMAKE_CXX_FLAGS_DEBUG="-Wall -m32 -Ofast  $MATHFLAGS"
+CMAKE_CXX_FLAGS="-Wall -Ofast $MATHFLAGS" 
+CMAKE_CFLAGS="-Wall -Ofast $MATHFLAGS" 
+CMAKE_C_FLAGS="-Wall -Ofast  $MATHFLAGS" 
+CMAKE_CXX_FLAGS_DEBUG="-Wall -Ofast  $MATHFLAGS"
 
 # -arch x86-64 -arch i386  -Xarch_x86_64
 case $system_VER in
@@ -42,21 +42,21 @@ case $system_VER in
         export FFLAGS="$FFLAGS"
         export CFLAGS="$CFLAGS " #$ARCHFLAGS
         export CPPFLAGS="$CPPFLAGS"
-        export LD_LIBRARY_PATH="/Developer/SDKs/MacOSX.sdk/usr/lib/gcc/i686-apple-darwin11/4.2.1/:$LD_LIBRARY_PATH"
+        # export LD_LIBRARY_PATH="/Developer/SDKs/MacOSX.sdk/usr/lib/gcc/i686-apple-darwin11/4.2.1/:$LD_LIBRARY_PATH"
     ;;
     64) # 
         export LDFLAGS="$LDFLAGS"
         export FFLAGS="$FFLAGS"
         export CFLAGS="$CFLAGS " #$ARCHFLAGS
         export CPPFLAGS="$CPPFLAGS"
-        export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/Developer/SDKs/MacOSX.sdk/usr/lib/gcc/i686-apple-darwin11/4.2.1/"
+        # export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/Developer/SDKs/MacOSX.sdk/usr/lib/gcc/i686-apple-darwin11/4.2.1/"
     ;;
     *)
         export LDFLAGS="$LDFLAGS"
         export FFLAGS="$FFLAGS"
         export CFLAGS="$CFLAGS $ARCHFLAGS"
         export CPPFLAGS="$CPPFLAGS"
-        export LD_LIBRARY_PATH="/usr/lib:$LD_LIBRARY_PATH"
+        # export LD_LIBRARY_PATH="/usr/lib:$LD_LIBRARY_PATH"
     ;;
 esac
 ### EXTRA LIB FLAGS ###
@@ -77,6 +77,7 @@ CPPFLAGS="-I/usr/local/opt/readline/include $CPPFLAGS"
 LDFLAGS="-L/usr/local/opt/bison/lib $LDFLAGS"
 LDFLAGS="-L/usr/local/opt/libarchive/lib $LDFLAGS"
 CPPFLAGS="-I/usr/local/opt/libarchive/include $CPPFLAGS"
+
 ## QT Support
 LDFLAGS="-L/usr/local/opt/qt/lib $LDFLAGS"
 CPPFLAGS="-I/usr/local/opt/qt/include $CPPFLAGS"
@@ -103,6 +104,7 @@ CPPFLAGS="-I/usr/local/opt/openblas/include $CPPFLAGS"
 ## llvm support
 ## brew install llvm -v --all-targets --rtti --shared --with-asan --with-clang --use-clang
 export PATH="/usr/local/opt/llvm/bin:$PATH"
+
 ## Typical LD flag
 # LDFLAGS="-L/usr/local/opt/llvm/lib $LDFLAGS" 
 ## To use the bundled libc++ please add the following LDFLAGS:
