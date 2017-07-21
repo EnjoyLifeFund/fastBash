@@ -2536,9 +2536,6 @@ export PATH="/usr/local/opt/bison/bin:$PATH"
 ## Rust  & Weld Support
 ## curl https://sh.rustup.rs -sSf | sh
 export PATH="$HOME/.cargo/bin:$PATH"
-export WELD_HOME="~/.weld"-## Rust  & Weld Support
-## curl https://sh.rustup.rs -sSf | sh
-export PATH="$HOME/.cargo/bin:$PATH"
 export WELD_HOME="~/.weld"
 
 ## OPT lib support
