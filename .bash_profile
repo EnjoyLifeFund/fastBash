@@ -16,7 +16,7 @@ system_VER=64
 # https://gcc.gnu.org/onlinedocs/gcc-4.9.2/gcc/Optimize-Options.html
 # MPIFLAG=" -lelan lmpi"
 # http://www.netlib.org/benchmark/hpl/results.html
-LTOFLAGS="-flto -m64" #-m32  ## Unknown -flto-compression-level  ## LTOFLAS Controls 
+LTOFLAGS="-flto -m64 -m32"  ## Unknown -flto-compression-level  ## LTOFLAS Controls 
 MAKEJOBS="-j8"
 MachineFLAGS="-mmmx -msse $LTOFLAGS" # -lpthread
 MATHFLAGS="-ffast-math -fno-signed-zeros $MachineFLAGS -ffp-contract=fast" #-mfpmath=sse+387 
@@ -1720,13 +1720,14 @@ function myipv6() {
 
 
 
-## Requirement :  npm install goo.gl -g
+## Requirement :  npm install goo.gl -g , brew 
 ## Return shortened URL from google's service.
 ## ex:   surl www.taiwan.com
 ## http://www.taiwan.com -> https://goo.gl/RZeFs2
 
 function surl() {
-    goo.gl --key=AIzaSyBYiGQNzuBqGNrJnd1Njbzyy4GzQbbEbf0 $1
+    goo.gl --key=AIzaSyBYiGQNzuBqGNrJnd1Njbzyy4GzQbbEbf0 $1 >>surl.log
+    tail -n 1 surl.log
 }
 
 ## This script helps to provide a link to your server using ipv6.
