@@ -1,4 +1,9 @@
-# Copyright [2017] [Ralic Lo]
+# Authors : 
+# [Ralic Lo (ralic.lo.eng@ieee.org)
+# [NATHANIEL LANDAU] https://natelandau.com/nathaniel-landau-resume/
+
+
+# Copyright [2017] 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -343,7 +348,8 @@ source $(brew --prefix)/etc/bash_completion
 alias cp='cp -iv'                           # Preferred 'cp' implementation
 alias mv='mv -iv'                           # Preferred 'mv' implementation
 alias mkdir='mkdir -pv'                     # Preferred 'mkdir' implementation
-alias ll='ls -FGlAhp'                       # Preferred 'ls' implementation
+alias ls="ls --color=auto"					# Ensure ls will display color
+alias ll='ls -FGlAhp --color=auto'          # Preferred 'ls' implementation
 alias less='less -FSRXc'                    # Preferred 'less' implementation
 cd() { builtin cd "$@"; ll; }               # Always list directory contents upon 'cd'
 alias cd..='cd ../'                         # Go back 1 directory level (for fast typers)
@@ -988,7 +994,7 @@ function rcf () {
 }
 
 ## Function that transverse a file.
-function trans () {
+function tsfile () {
 	awk '
 	{
 	    for (i = 1; i <= NF; i++) {
@@ -1464,8 +1470,14 @@ java -jar "$DIRNAME/jd-cli.jar" $@
 ## This script helps to bootstrap speak/translate service
 ## Author: Ralic Lo
 ## OS: macOS 
-## REQUIRED: brew install gawk rlwrap curl 
-## REF : https://github.com/soimort/translate-shell
+## REQUIREMENT-1: brew install gawk rlwrap curl 
+## REQUIREMENT-2:  https://github.com/soimort/translate-shell
+## Install Script: 
+## wget https://www.soimort.org/translate-shell/trans; chmod 750 trans; mv trans /usr/local/bin
+## https://www.soimort.org/translate-shell/#installation
+
+## Better Voice
+## https://github.com/espeak-ng/espeak-ng/blob/master/docs/mbrola.md
 
 function gspeak() {
 ## Exit if no args.
@@ -1480,7 +1492,7 @@ if [[ $# -eq 0 ]] ; then
     return 0
 fi
 echo "------"
-sudo trans "$@"
+trans "$@" ## trans is enabled after install translate-shell
 echo "------"
 
 espeak -vzh+f2 -s 200 "$1"
@@ -1720,7 +1732,7 @@ function myipv6() {
 
 
 
-## Requirement :  npm install goo.gl -g , brew 
+## Requirement :  npm install goo.gl -g 
 ## Return shortened URL from google's service.
 ## ex:   surl www.taiwan.com
 ## http://www.taiwan.com -> https://goo.gl/RZeFs2
@@ -2314,6 +2326,14 @@ function lfgf() {
 function gosystem() {
     cd /Library/Preferences/SystemConfiguration
 }
+
+
+function gitdf() {
+	echo "## This script helps you compare new commmit and previous commit in git"
+	echo "If you dont' agree with this change, use 'git reset HEAD' to reverse the change."
+	git diff HEAD^ HEAD  ## or git show
+}
+
 ## This script help backup your current git 
 ## and pull everthing from remote and reset it
 ## REF : https://stackoverflow.com/questions/1628088/reset-local-repository-branch-to-be-just-like-remote-repository-head
@@ -2400,10 +2420,13 @@ function rejs() {
 	npm list -g --depth=1
 }
 
+### List all npm packages with only one level of depth
 alias ng1="npm list -g --depth=1"
+
 ## This script helps reinstalling all brew packages. 
 ## Note: It's good for reinstalled packages from developer's brew repository
 ## git clone https://github.com/ralic/cellar-backup
+
 function rebrew () {
 	brew upgrade
     brew list | grep -v gettext | grep -v gcc| grep -v llvm| xargs brew deps --tree
@@ -2441,10 +2464,11 @@ function hi100() {
 	 cat hello.txt
 }
 
-## This sciprt help search for all executable and check its 
+## Find only executables
+## This sciprt help search for all executables
 
 function findexe() {
-	 gfind . -executable -type f | xargs file > execfile.log
+	 gfind . -executable -type f | xargs file > execfile.log;
 	 cat execfile.log
 }
 
@@ -2455,9 +2479,10 @@ function pping() {
 	 parallel --help
 }
 
-## Find only executables
+## This function helps you genenrate a text file without editor
+## USAGE : teec "filename" 
 
-### Move Node.js lib to standard folder.
+alias teec="echo '[Info] Generate a excutable or readable text file';echo '[Info] Type EOF to end the shell';tee $1 <<-'EOF'"
 
 ### Replacing orginal Mac build 
 
@@ -2515,7 +2540,6 @@ alias jp3="python3 /usr/local/lib/python3.6/site-packages/jupyter.py notebook"
 alias find="gfind" ## [Waring Ignored] gfind: invalid argument `-1d' to `-mtime'
 alias time="gtime -v"
 alias python=python3
-alias ls=/bin/ls
 alias tar=gtar
 alias make="gmake $MAKEJOBS"
 alias gopy3="cd /usr/local/lib/python3.6/site-packages"
