@@ -248,9 +248,13 @@ export ANDROID_HOME=~/Library/Android/sdk
 export PATH=$PATH:~/Library/Android/sdk/platform-tools
 #android toolbox binary excutable 
 export PATH=$PATH:~/Library/Android/sdk/tools 
-#golang support
-export PATH=$PATH:/usr/local/opt/go/libexec/bin:/usr/local/opt/go/libexec/bin/bin:/usr/local/go/bin
-export GOPATH=/usr/local/opt/go/libexec/bin
+# Golang support / Blueprint Support # https://blue-jay.github.io/
+export JAYCONFIG=$HOME/golang/bluejay_env.json
+#/usr/local/go/bin
+export GOPATH=$HOME/golang
+export GOROOT=/usr/local/opt/go/libexec
+export PATH=$PATH:$GOPATH/bin
+export PATH=$PATH:$GOROOT/bin
 # export GOPATH=$HOME/work
 
 # scala support in Intellij
