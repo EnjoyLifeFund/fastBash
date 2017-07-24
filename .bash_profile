@@ -16,12 +16,13 @@
 
 alias sll='/Applications/Sublime\ Text.app/Contents/MacOS/Sublime\ Text'
 #alias sll='/opt/sublime_text/sublime_text'
-
+## Add this line for some python3 packages installation
+MACOSX_DEPLOYMENT_TARGET=$(sw_vers | grep ProductVersion | awk '{print $2}')
 system_VER=64
 # https://gcc.gnu.org/onlinedocs/gcc-4.9.2/gcc/Optimize-Options.html
 # MPIFLAG=" -lelan lmpi"
 # http://www.netlib.org/benchmark/hpl/results.html
-LTOFLAGS="-flto -m64 -m32"  ## Unknown -flto-compression-level  ## LTOFLAS Controls 
+LTOFLAGS="-flto -m64" # -m32  ## Unknown -flto-compression-level  ## LTOFLAS Controls 
 MAKEJOBS="-j8"
 MachineFLAGS="-mmmx -msse $LTOFLAGS" # -lpthread
 MATHFLAGS="-ffast-math -fno-signed-zeros $MachineFLAGS -ffp-contract=fast" #-mfpmath=sse+387 
@@ -1738,7 +1739,7 @@ function myipv6() {
 ## http://www.taiwan.com -> https://goo.gl/RZeFs2
 
 function surl() {
-    goo.gl --key=AIzaSyBYiGQNzuBqGNrJnd1Njbzyy4GzQbbEbf0 $1 >>surl.log
+    goo.gl --key=AIzaSyAMbjiR9XN1DADOKmb2bZiFw9R4Wtq6SVE $1 >>surl.log
     tail -n 1 surl.log
 }
 
@@ -2332,6 +2333,11 @@ function gitdf() {
 	echo "## This script helps you compare new commmit and previous commit in git"
 	echo "If you dont' agree with this change, use 'git reset HEAD' to reverse the change."
 	git diff HEAD^ HEAD  ## or git show
+}
+
+function gitadm() { 
+	echo "## This script helps you add modified files only on git, good for python packages upgrade"
+	git ls-files --modified | xargs git add
 }
 
 ## This script help backup your current git 
