@@ -14,40 +14,55 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-alias sll='/Applications/Sublime\ Text.app/Contents/MacOS/Sublime\ Text'
+
+#For MacOSX, install coreutils (which includes greadlink)
+# $brew install coreutils
+if [ "$(uname -s)" == "Linux" ]; then
+    READLINK="readlink"
+	export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
+	export MANPATH="/home/linuxbrew/.linuxbrew/share/man:$MANPATH"
+	export INFOPATH="/home/linuxbrew/.linuxbrew/share/info:$INFOPATH"
+	OPT_PREFIX=/home/linuxbrew/.linuxbrew/opt
+fi
+
+if [ "$(uname -s)" == "Darwin" ]; then
+    READLINK="greadlink"
+    alias sll='/Applications/Sublime\ Text.app/Contents/MacOS/Sublime\ Text'
+	MACOSX_DEPLOYMENT_TARGET=$(sw_vers | grep ProductVersion | awk '{print $2}')
+	export MACOSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET"
+	OPT_PREFIX=/usr/local/opt
+fi
+
 #alias sll='/opt/sublime_text/sublime_text'
 ## Add this line for some python3 packages installation
-MACOSX_DEPLOYMENT_TARGET=$(sw_vers | grep ProductVersion | awk '{print $2}')
 system_VER=64
 # https://gcc.gnu.org/onlinedocs/gcc-4.9.2/gcc/Optimize-Options.html
 # MPIFLAG=" -lelan lmpi"
 # http://www.netlib.org/benchmark/hpl/results.html
-LTOFLAGS="-flto -m64" # -m32  ## Unknown -flto-compression-level  ## LTOFLAS Controls 
+LTOFLAGS="-flto -m64 -m32" #-m32 ## Unknown -flto-compression-level  ## LTOFLAS Controls 
 MAKEJOBS="-j8"
 MachineFLAGS="-mmmx -msse $LTOFLAGS" # -lpthread
 MATHFLAGS="-ffast-math -fno-signed-zeros $MachineFLAGS -ffp-contract=fast" #-mfpmath=sse+387 
 alias cc="clang-4.0"
 alias gcc="gcc-7 -Ofast"
+
+##http://www.netlib.org/benchmark/hpl/results.html
 CC="cc"  ## change gcc to cc // 2017-06-08
 CPP="cc -E"  ## change gcc to cc // 2017-06-08
 CXX="g++"
 CXXCPP="g++ -E"
-
-export CC="$CC"
-export CPP="$CPP"
-export CXX="$CXX"
-export CXXCPP="$CXXCPP"
-export MACOSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET"
-export PATH="$PATH"
-
-##http://www.netlib.org/benchmark/hpl/results.html
 CFLAGS="-Ofast -fomit-frame-pointer $MATHFLAGS -funroll-loops"
 CXXFLAGS="-Ofast $MATHFLAGS "
 FFLAGS="$CFLAGS  $MATHFLAGS "
+
+### set gcc debug flag, Default is not to use it.
+# DEBUGFLAG="-g"
+alias cpx="cc -c $LDFLAGS $DEBUGFLAG $CFLAGS -Ofast -flto"
+
 CMAKE_CXX_FLAGS="-Wall -Ofast $MATHFLAGS" 
 CMAKE_CFLAGS="-Wall -Ofast $MATHFLAGS" 
 CMAKE_C_FLAGS="-Wall -Ofast  $MATHFLAGS" 
-CMAKE_CXX_FLAGS_DEBUG="-Wall -Ofast  $MATHFLAGS"
+CMAKE_CXX_FLAGS_DEBUG="-Wall -Ofast $MATHFLAGS"
 
 # -arch x86-64 -arch i386  -Xarch_x86_64
 case $system_VER in
@@ -74,73 +89,44 @@ case $system_VER in
     ;;
 esac
 ### EXTRA LIB FLAGS ###
+export CC="$CC"
+export CPP="$CPP"
+export CXX="$CXX"
+export CXXCPP="$CXXCPP"
+export PATH="$PATH"
 
-## To be clean up
-LDFLAGS="-L/usr/local/opt/openssl@1.1/lib $LDFLAGS"
-CPPFLAGS="-I/usr/local/opt/openssl@1.1/include $CPPFLAGS"
-LDFLAGS="-L/usr/local/opt/zlib/lib $LDFLAGS"
-CPPFLAGS="-I/usr/local/opt/zlib/include $CPPFLAGS"
-LDFLAGS="-L/usr/local/opt/libpng/lib $LDFLAGS"
-CPPFLAGS="-I/usr/local/opt/libpng/include $CPPFLAGS"
-LDFLAGS="-L/usr/local/opt/libxml2/lib $LDFLAGS"
-LDFLAGS="-L/usr/local/opt/gettext/lib $LDFLAGS"
-CPPFLAGS="-I/usr/local/opt/libxml2/include $CPPFLAGS"
-CPPFLAGS="-I/usr/local/opt/gettext/include $CPPFLAGS"
-LDFLAGS="-L/usr/local/opt/readline/lib $LDFLAGS"
-CPPFLAGS="-I/usr/local/opt/readline/include $CPPFLAGS"
-LDFLAGS="-L/usr/local/opt/bison/lib $LDFLAGS"
-LDFLAGS="-L/usr/local/opt/libarchive/lib $LDFLAGS"
-CPPFLAGS="-I/usr/local/opt/libarchive/include $CPPFLAGS"
 
 ## QT Support
-LDFLAGS="-L/usr/local/opt/qt/lib $LDFLAGS"
-CPPFLAGS="-I/usr/local/opt/qt/include $CPPFLAGS"
-PKG_CONFIG_PATH="/usr/local/opt/qt/lib/pkgconfig:$PKG_CONFIG_PATH"
+# PKG_CONFIG_PATH="$OPT_PREFIX/qt/lib/pkgconfig:$PKG_CONFIG_PATH"
 
 ## OpenCV3 Support
-LDFLAGS="-L/usr/local/opt/opencv3/lib $LDFLAGS"
-CPPFLAGS="-I/usr/local/opt/opencv3/include $CPPFLAGS"
-export PATH="/usr/local/opt/opencv3/bin:$PATH"
-PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/local/opt/opencv3/lib/pkgconfig"
+# PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$OPT_PREFIX/opencv3/lib/pkgconfig"
+export PATH="$OPT_PREFIX/opencv3/bin:$PATH"
 
 ## e2fslib support
-LDFLAGS="-L/usr/local/lib -L$(brew --prefix e2fsprogs)/lib $LDFLAGS"
-export PATH="$(brew --prefix e2fsprogs)/lib:$PATH"
+# export PATH="$(brew --prefix e2fsprogs)/lib:$PATH"
 
 ## graphviz support
-export PATH="/usr/local/opt/graphviz/bin:$PATH"
+export PATH="$OPT_PREFIX/graphviz/bin:$PATH"
+
 ## openblas support
 ## brew install openblas
 export OPENBLAS_NUM_THREADS=32
-LDFLAGS="-L/usr/local/opt/openblas/lib $LDFLAGS"
-CPPFLAGS="-I/usr/local/opt/openblas/include $CPPFLAGS"
 
 ## llvm support
-## brew install llvm -v --all-targets --rtti --shared --with-asan --with-clang --use-clang
-export PATH="/usr/local/opt/llvm/bin:$PATH"
-
-## Typical LD flag
-# LDFLAGS="-L/usr/local/opt/llvm/lib $LDFLAGS" 
-## To use the bundled libc++ please add the following LDFLAGS:
-LDFLAGS="-L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib $LDFLAGS"
-CPPFLAGS="-I/usr/local/opt/llvm/include $CPPFLAGS"
+## brew reinstall llvm -v --all-targets --rtti --shared --with-asan --with-clang --use-clang
+export PATH="$OPT_PREFIX/llvm/bin:$PATH"
 
 ##valgrind support
-export PATH="/usr/local/opt/valgrind/bin:$PATH"
-LDFLAGS="-L/usr/local/opt/valgrind/lib $LDFLAGS" 
-CPPFLAGS="-I/usr/local/opt/valgrind/include $CPPFLAGS"
+export PATH="$OPT_PREFIX/valgrind/bin:$PATH"
 
 ### GLOBALS ###
-
 function macdev() {
-	#macOS_VER=10.7
 	CPPFLAGS="-I/usr/include/ -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include"
 	ARCHFLAGS="-isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk"
 	# LDFLAGS="-L/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib -L/usr/lib"
 	LD_LIBRARY_PATH="/Applications/Xcode.app/Contents/Developer/usr/lib/:$LD_LIBRARY_PATH"
-	MACOSX_DEPLOYMENT_TARGET="$macOS_VER"
 	PATH="/Applications/Xcode.app/Contents/Developer/usr/bin/:$PATH"
-
 	echo "________________________________________________________________________________"
 	echo "COMPILERS:" $CC @ $CPP @ $CXX @ $CXXCPP 
 	echo "FLAGS:"  $ARCHFLAGS @  @ $CFLAGS @ $FFLAGS @ $LDFLAGS
@@ -161,6 +147,38 @@ JAVA_9="/Library/Java/JavaVirtualMachines/jdk-9.jdk/Contents/Home"
 #export APACHE_HOME=/home/ec2-user
 #export PATH=$PATH:$APACHE_HOME/apache-maven-3.5.0/bin:$APACHE_HOME/apache-cassandra-3.7/bin
 
+
+
+## To be clean up
+# LDFLAGS="-L$OPT_PREFIX/openssl@1.1/lib $LDFLAGS"
+# CPPFLAGS="-I$OPT_PREFIX/openssl@1.1/include $CPPFLAGS"
+# LDFLAGS="-L$OPT_PREFIX/zlib/lib $LDFLAGS"
+# CPPFLAGS="-I$OPT_PREFIX/zlib/include $CPPFLAGS"
+# LDFLAGS="-L$OPT_PREFIX/libpng/lib $LDFLAGS"
+# CPPFLAGS="-I$OPT_PREFIX/libpng/include $CPPFLAGS"
+# LDFLAGS="-L$OPT_PREFIX/libxml2/lib $LDFLAGS"
+# LDFLAGS="-L$OPT_PREFIX/gettext/lib $LDFLAGS"
+# CPPFLAGS="-I$OPT_PREFIX/libxml2/include $CPPFLAGS"
+# CPPFLAGS="-I$OPT_PREFIX/gettext/include $CPPFLAGS"
+# LDFLAGS="-L$OPT_PREFIX/readline/lib $LDFLAGS"
+# CPPFLAGS="-I$OPT_PREFIX/readline/include $CPPFLAGS"
+# LDFLAGS="-L$OPT_PREFIX/bison/lib $LDFLAGS"
+# LDFLAGS="-L$OPT_PREFIX/libarchive/lib $LDFLAGS"
+# CPPFLAGS="-I$OPT_PREFIX/libarchive/include $CPPFLAGS"
+# LDFLAGS="-L$OPT_PREFIX/valgrind/lib $LDFLAGS" 
+# CPPFLAGS="-I$OPT_PREFIX/valgrind/include $CPPFLAGS"
+# LDFLAGS="-L$OPT_PREFIX/llvm/lib -Wl,-rpath,$OPT_PREFIX/llvm/lib $LDFLAGS"
+LDFLAGS="-L$OPT_PREFIX/llvm/lib $LDFLAGS" 
+CPPFLAGS="-I$OPT_PREFIX/llvm/include $CPPFLAGS"
+# LDFLAGS="-L$OPT_PREFIX/openblas/lib $LDFLAGS"
+# CPPFLAGS="-I$OPT_PREFIX/openblas/include $CPPFLAGS"
+# LDFLAGS="-L$OPT_PREFIX/qt/lib $LDFLAGS"
+# CPPFLAGS="-I$OPT_PREFIX/qt/include $CPPFLAGS"
+# LDFLAGS="-L$OPT_PREFIX/opencv3/lib $LDFLAGS"
+# CPPFLAGS="-I$OPT_PREFIX/opencv3/include $CPPFLAGS"
+# LDFLAGS="-L/usr/local/lib -L$(brew --prefix e2fsprogs)/lib $LDFLAGS"
+
+
 ## Setting Locale
 ## locale
 # https://www.gnu.org/savannah-checkouts/gnu/libc/manual/html_node/Locale-Categories.html
@@ -177,44 +195,44 @@ echo "FLAGS:"  $ARCHFLAGS @  @ $CFLAGS @ $FFLAGS @ $LDFLAGS
 export CLICOLOR=1
 export TERM="xterm-color" 
 
-# export PATH=/usr/local/opt/gcc7/bin:$PATH
-export PATH="/usr/local/opt/gc/lib/gcc/7:$PATH"
+# export PATH=$OPT_PREFIX/gcc7/bin:$PATH
+export PATH="$OPT_PREFIX/gc/lib/gcc/7:$PATH"
 
 ## GNU GCC/ BINUTILS SUPPORT
 ## brew install binutils
-export PATH="/usr/local/opt/binutils/bin:$PATH"
-export PATH="/usr/local/opt/binutils/include:$PATH"
-export PATH="/usr/local/opt/binutils/lib:$PATH"
+export PATH="$OPT_PREFIX/binutils/bin:$PATH"
+export PATH="$OPT_PREFIX/binutils/include:$PATH"
+export PATH="$OPT_PREFIX/binutils/lib:$PATH"
 
-export MANPATH="/usr/local/opt/gnu-sed/libexec/gnuman:$MANPATH" ## man gsed for gnused
-export MANPATH="/usr/local/opt/coreutils/libexec/gnuman:$MANPATH"
+export MANPATH="$OPT_PREFIX/gnu-sed/libexec/gnuman:$MANPATH" ## man gsed for gnused
+export MANPATH="$OPT_PREFIX/coreutils/libexec/gnuman:$MANPATH"
 
-export PATH="/usr/local/opt/coreutils/libexec/gnubin:$PATH"
-export PATH="/usr/local/opt/gnu-sed/libexec/gnubin:$PATH"
+export PATH="$OPT_PREFIX/coreutils/libexec/gnubin:$PATH"
+export PATH="$OPT_PREFIX/gnu-sed/libexec/gnubin:$PATH"
 
-# export PATH=/usr/local/opt/binutils/2.28/x86_64-apple-darwin16.4.0/bin:$PATH
+# export PATH=$OPT_PREFIX/binutils/2.28/x86_64-apple-darwin16.4.0/bin:$PATH
 
 ## GNU GCC setup for OSX
 ## brew install gcc
-export PATH="/usr/local/opt/cmake/bin:$PATH"
-export PATH="/usr/local/opt/make/bin:$PATH"
-export PATH="/usr/local/opt/gmp/lib:$PATH" 
-export PATH="/usr/local/opt/sqlite/bin:$PATH" # type sqlite3 to verfiy
-export PATH="/usr/local/opt/curl/bin:$PATH"
-export PATH="/usr/local/opt/mingw-w64/bin:$PATH"
-export PATH="/usr/local/opt/sqlite/bin:$PATH"
-export PATH="/usr/local/opt/curl/bin:$PATH"
-export PATH="/usr/local/opt/libarchive/bin:$PATH"
+export PATH="$OPT_PREFIX/cmake/bin:$PATH"
+export PATH="$OPT_PREFIX/make/bin:$PATH"
+export PATH="$OPT_PREFIX/gmp/lib:$PATH" 
+export PATH="$OPT_PREFIX/sqlite/bin:$PATH" # type sqlite3 to verfiy
+export PATH="$OPT_PREFIX/curl/bin:$PATH"
+export PATH="$OPT_PREFIX/mingw-w64/bin:$PATH"
+export PATH="$OPT_PREFIX/sqlite/bin:$PATH"
+export PATH="$OPT_PREFIX/curl/bin:$PATH"
+export PATH="$OPT_PREFIX/libarchive/bin:$PATH"
 
 ## Android / Java src code   Support
-export PATH="/usr/local/opt/dex2jar/bin:$PATH"
+export PATH="$OPT_PREFIX/dex2jar/bin:$PATH"
 
 ## Rstudio Support
 ## brew install rstudio
 export PATH=/Applications/RStudio.app/Contents/MacOS:$PATH
 
 ## QT Setup
-export PATH="/usr/local/opt/qt/bin:$PATH"
+export PATH="$OPT_PREFIX/qt/bin:$PATH"
 
 ## MAC Developer Commandline Support
 # export PATH=/Library/Developer/CommandLineTools/usr/bin:$PATH
@@ -226,11 +244,11 @@ export PATH="/usr/local/heroku/bin:$PATH"
 export PATH="/Library/Developer/Toolchains/swift-latest.xctoolchain/usr/bin:$PATH"
 
 # TOMEE-PLUS
-export PATH="$PATH:/usr/local/opt/tomee-plus/libexec/bin"
+export PATH="$PATH:$OPT_PREFIX/tomee-plus/libexec/bin"
 
 # Node.js support
 # export PATH=$PATH:~/.npm-packages/bin
-export PATH="$PATH:/usr/local/opt/node/bin:~/.npm/npm/bin"
+export PATH="$PATH:$OPT_PREFIX/node/bin:~/.npm/npm/bin"
 
 # Android support on MAC
 export ANDROID_HOME=~/Library/Android/sdk
@@ -243,21 +261,21 @@ export PATH=$PATH:~/Library/Android/sdk/tools
 export JAYCONFIG=$HOME/golang/bluejay_env.json
 #/usr/local/go/bin
 export GOPATH=$HOME/golang
-export GOROOT="/usr/local/opt/go/libexec"
+export GOROOT="$OPT_PREFIX/go/libexec"
 export PATH=$PATH:$GOPATH/bin
 export PATH=$PATH:$GOROOT/bin
 
 # scala support in Intellij
-export SCALA_HOME=/usr/local/opt/scala/idea
+export SCALA_HOME=$OPT_PREFIX/scala/idea
 
 # Apache Spark Support  start-master.sh
 # http://spark.apache.org/docs/latest/spark-standalone.html
-SPARK_HOME="/usr/local/opt/apache-spark/libexec"
+SPARK_HOME="$OPT_PREFIX/apache-spark/libexec"
 export PYTHONPATH=$SPARK_HOME/python:$SPARK_HOME/python/build:$PYTHONPATH
 export PYSPARK_DRIVER_PYTHON=python
 export PATH=$PATH:$SPARK_HOME
-export PATH=$PATH:/usr/local/opt/apache-spark/bin
-export PATH=$PATH:/usr/local/opt/apache-spark/libexec/sbin
+export PATH=$PATH:$OPT_PREFIX/apache-spark/bin
+export PATH=$PATH:$OPT_PREFIX/apache-spark/libexec/sbin
 
 ## Jupyter Notebook Support
 # export PYTHONPATH=$SPARK_HOME/python/lib/py4j-0.10.4-src.zip:$PYTHONPATH
@@ -291,7 +309,7 @@ source $(brew --prefix)/etc/bash_completion
 # source <(kubectl completion bash)
 [ -f /usr/local/etc/bash_completion ] && . /usr/local/etc/bash_completion
 
- export PATH=$PATH:/usr/local/opt/openssl/lib
+ export PATH=$PATH:$OPT_PREFIX/openssl/lib
 
 
 #  ---------------------------------------------------------------------------
@@ -470,11 +488,19 @@ ffe () { find . -name '*'"$@" ; }  # ffe:      Find file whose name ends with a 
 #   Example : findpid bash
 #   -----------------------------------------------------
     alias findpid="lsof -t -c"
+
+## This script helps you find out the pid of a process on specific port
+## Example : portid 80
+	function portid () { 
+	 sport="$@"
+	 lsof -i:$sport
+	 echo "------"
+	 echo "Port:"$sport",PID=" $(lsof -i:$sport | grep $(whoami) | awk '{print $2}');
+	}
 	# function ppid() { 
 	# 	echo $! >test.pid | cat test.pid 
 	# }
 
-## This script helps you find out the pid of a process on specific port
 
 #   memHogsTop, memHogsPs:  Find memory hogs
 #   -----------------------------------------------------
@@ -616,13 +642,6 @@ function httpDebug () { /usr/bin/curl $@ -o /dev/null -w "dns: %{time_namelookup
 
 DU=/usr/local/bin/dup.sh
 
-#For MacOSX, install coreutils (which includes greadlink)
-# $brew install coreutils
-if [ "${OSTYPE:0:6}" == "darwin" ]; then
-    READLINK="greadlink"
-else
-    READLINK="readlink"
-fi
 
 SHELL_HISTORY=~/.dropshell_history
 DU_OPT="-q"
@@ -912,9 +931,9 @@ function dcat
 
 ### HADOOP SERVER COMMANDS###
 
-export HADOOP_HOME="/usr/local/opt/hadoop"
-export HADOOP_SBIN="/usr/local/opt/hadoop/sbin"
-export HADOOP_CONFIG="/usr/local/opt/hadoop/libexec/etc/hadoop"
+export HADOOP_HOME="$OPT_PREFIX/hadoop"
+export HADOOP_SBIN="$OPT_PREFIX/hadoop/sbin"
+export HADOOP_CONFIG="$OPT_PREFIX/hadoop/libexec/etc/hadoop"
 export TEXT_Editor=sl || vi ## default edit is sublime or vi
 
 function hstart() { 
@@ -945,12 +964,12 @@ export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
 ## Show the cpu's strength
 ##
 function ccpu () {
-	if [ "$(uname -s)" == "Linux GNU/Linux" ]; then
+	if [ "$(uname -s)" == "Linux" ]; then
 	        /bin/cat /proc/cpuinfo &&
 	        lscpu
 	fi
 
-	if [ "$(uname -s)" == "Darwin Darwin" ]; then
+	if [ "$(uname -s)" == "Darwin" ]; then
 	  	   system_profiler SPHardwareDataType
 		   sysctl -n machdep.cpu.brand_string
 	       sysctl hw && 
@@ -963,11 +982,11 @@ function ccpu () {
 ## Show the gpu's strength
 ##
 function cgpu () {
-	if [ "$(uname -s)" == "Linux GNU/Linux" ]; then
+	if [ "$(uname -s)" == "Linux" ]; then
 	        lspci  -v -s  $(lspci | grep VGA | cut -d" " -f 1) 
 	fi
 
-	if [ "$(uname -s)" == "Darwin Darwin" ]; then
+	if [ "$(uname -s)" == "Darwin" ]; then
 	       glxinfo > gpuinfo && cat gpuinfo
 	       echo "> cat gpuinfo < to see result"
 	fi
@@ -1064,7 +1083,7 @@ function allport() {
 ##
 function cthread () {
     sudo sysctl  -A | grep thread
-	if [ "$(uname -s)" == "Darwin Darwin" ]; then
+	if [ "$(uname -s)" == "Darwin" ]; then
 	    sysctl kern.maxproc
 		sysctl kern.maxvnodes
 		sysctl kern.maxfiles
@@ -2304,7 +2323,7 @@ function idf () {
 }
 
 function gobrew() {
-    if [ "${OSTYPE:0:6}" == "darwin" ]; then
+    if [ "$(uname -s)" == "darwin" ]; then
         cd /usr/local/Homebrew/Library/Taps/homebrew/homebrew-core/Formula
     else
         cd /home/linuxbrew/.linuxbrew/Homebrew/Library/Taps/homebrew/homebrew-core/Formula/
@@ -2341,6 +2360,10 @@ function gitrestart() {
     git fetch --all
     git reset --hard origin/master
 }
+
+## This cript helps you push all submodules using git.
+alias gitpushall="git push --recurse-submodules=on-demand"
+
 ## This script helps to replace master from development
 ## REF : https://stackoverflow.com/questions/2862590/how-to-replace-master-branch-in-git-entirely-from-another-branch
 function gitdmaster() {
@@ -2412,7 +2435,7 @@ function brewcc () {
 
 function rejs() {
 	mkdir -p ~/.npm
-	yes|cp -rf /usr/local/opt/node/lib/node_modules/npm ~/.npm/npm
+	yes|cp -rf $OPT_PREFIX/node/lib/node_modules/npm ~/.npm/npm
 	npm config --global set prefix "~/.npm/npm"
 	npm config list
 	npm list -g --depth=1
@@ -2541,16 +2564,16 @@ alias python=python3
 alias tar=gtar
 alias make="gmake $MAKEJOBS"
 
-export PATH="/usr/local/opt/texinfo/bin:$PATH"
+export PATH="$OPT_PREFIX/texinfo/bin:$PATH"
 # export PATH="/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS6.1.sdk/usr/include/:$PATH"
 export PATH="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/4.2/include:$PATH"
 ##/bin/cp /usr/local/Cellar/gettext/0.19.8.1/lib/libintl.8.dylib /usr/local/lib/libintl.8.dylib
 export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
 export MANPATH="/home/linuxbrew/.linuxbrew/share/man:$MANPATH"
 export INFOPATH="/home/linuxbrew/.linuxbrew/share/info:$INFOPATH"
-export PATH="/usr/local/opt/m4/bin:$PATH"
-export PATH="/usr/local/opt/gettext/bin:$PATH"
-export PATH="/usr/local/opt/bison/bin:$PATH"
+export PATH="$OPT_PREFIX/m4/bin:$PATH"
+export PATH="$OPT_PREFIX/gettext/bin:$PATH"
+export PATH="$OPT_PREFIX/bison/bin:$PATH"
 
 ## Perl5 upgrade // Run once ?
 # PERL_MM_OPT="INSTALL_BASE=$HOME/perl5" cpan local::lib
@@ -2564,19 +2587,19 @@ export WELD_HOME="~/.weld"
 ## OPT lib support
 ## Reset lib prioirty
 
-export PATH="/usr/local/opt/m4/bin:$PATH"
-export PATH="/usr/local/opt/gettext/bin:$PATH"
-export PATH="/usr/local/opt/bison/bin:$PATH"
-export PATH="/usr/local/opt/gnu-getopt/bin:$PATH"
-export PATH="/usr/local/opt/icu4c/bin:$PATH"
-export PATH="/usr/local/opt/icu4c/sbin:$PATH"
-export PATH="/usr/local/opt/libarchive/bin:$PATH"
-export PATH="/usr/local/opt/libxml2/bin:$PATH"
-export PATH="/usr/local/opt/e2fsprogs/bin:$PATH"
-export PATH="/usr/local/opt/readline/bin:$PATH"
-export PATH="/usr/local/opt/sphinx-doc/bin:$PATH"
-export PATH="/usr/local/opt/tcl-tk/bin:$PATH"
-export PATH="/usr/local/opt/sqlite/bin:$PATH"
+export PATH="$OPT_PREFIX/m4/bin:$PATH"
+export PATH="$OPT_PREFIX/gettext/bin:$PATH"
+export PATH="$OPT_PREFIX/bison/bin:$PATH"
+export PATH="$OPT_PREFIX/gnu-getopt/bin:$PATH"
+export PATH="$OPT_PREFIX/icu4c/bin:$PATH"
+export PATH="$OPT_PREFIX/icu4c/sbin:$PATH"
+export PATH="$OPT_PREFIX/libarchive/bin:$PATH"
+export PATH="$OPT_PREFIX/libxml2/bin:$PATH"
+export PATH="$OPT_PREFIX/e2fsprogs/bin:$PATH"
+export PATH="$OPT_PREFIX/readline/bin:$PATH"
+export PATH="$OPT_PREFIX/sphinx-doc/bin:$PATH"
+export PATH="$OPT_PREFIX/tcl-tk/bin:$PATH"
+export PATH="$OPT_PREFIX/sqlite/bin:$PATH"
 alias airport="/System/Library/PrivateFrameworks/Apple80211.framework/Resources/airport"
 alias nets="/usr/sbin/networksetup -listallhardwareports"
 
@@ -2587,11 +2610,3 @@ alias gonpm="cd /usr/local/lib/node_modules"
 ### List of Setting
 mvn -version
 
-## Example : portid 80
-
-	function portid () { 
-	 sport="$@"
-	 lsof -i:$sport
-	 echo "------"
-	 echo "Port:"$sport",PID=" $(lsof -i:$sport | grep $(whoami) | awk '{print $2}');
-	}
