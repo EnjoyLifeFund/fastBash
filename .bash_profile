@@ -1,7 +1,7 @@
+#!/bin/bash
 # Authors : 
 # [Ralic Lo (ralic.lo.eng@ieee.org)
 # [NATHANIEL LANDAU] https://natelandau.com/nathaniel-landau-resume/
-
 
 # Copyright [2017] 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,6 +32,14 @@ CC="cc"  ## change gcc to cc // 2017-06-08
 CPP="cc -E"  ## change gcc to cc // 2017-06-08
 CXX="g++"
 CXXCPP="g++ -E"
+
+export CC="$CC"
+export CPP="$CPP"
+export CXX="$CXX"
+export CXXCPP="$CXXCPP"
+export MACOSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET"
+export PATH="$PATH"
+
 ##http://www.netlib.org/benchmark/hpl/results.html
 CFLAGS="-Ofast -fomit-frame-pointer $MATHFLAGS -funroll-loops"
 CXXFLAGS="-Ofast $MATHFLAGS "
@@ -124,14 +132,6 @@ CPPFLAGS="-I/usr/local/opt/valgrind/include $CPPFLAGS"
 
 ### GLOBALS ###
 
-export ARCHFLAGS="$ARCHFLAGS"
-export CC="$CC"
-export CPP="$CPP"
-export CXX="$CXX"
-export CXXCPP="$CXXCPP"
-export MACOSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET"
-export PATH="$PATH"
-
 function macdev() {
 	#macOS_VER=10.7
 	CPPFLAGS="-I/usr/include/ -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include"
@@ -145,6 +145,7 @@ function macdev() {
 	echo "COMPILERS:" $CC @ $CPP @ $CXX @ $CXXCPP 
 	echo "FLAGS:"  $ARCHFLAGS @  @ $CFLAGS @ $FFLAGS @ $LDFLAGS
 }
+
 #   Set Local Paths
 #   ------------------------------------------------------------
 export PATH="/usr/local/bin:/usr/local:/usr/local/sbin:/usr/local/include:$PATH"
@@ -155,7 +156,7 @@ export PATH="/usr/local/mysql/bin:$CASSANDRA_HOME/bin:$FORREST_HOME/bin:$PATH"
 #R CMD javareconf JAVA_CPPFLAGS="-I/System/Library/Frameworks/JavaVM.framework/Headers -I$(/usr/libexec/java_home | grep -o '.*jdk')"
 
 ## Java 9 Support 
-JAVA_9=/Library/Java/JavaVirtualMachines/jdk-9.jdk/Contents/Home
+JAVA_9="/Library/Java/JavaVirtualMachines/jdk-9.jdk/Contents/Home"
 ### For aws server
 #export APACHE_HOME=/home/ec2-user
 #export PATH=$PATH:$APACHE_HOME/apache-maven-3.5.0/bin:$APACHE_HOME/apache-cassandra-3.7/bin
@@ -163,6 +164,8 @@ JAVA_9=/Library/Java/JavaVirtualMachines/jdk-9.jdk/Contents/Home
 ## Setting Locale
 ## locale
 # https://www.gnu.org/savannah-checkouts/gnu/libc/manual/html_node/Locale-Categories.html
+
+export ARCHFLAGS="$ARCHFLAGS"
 echo "________________________________________________________________________________"
 export LC_ALL=en_US.UTF-8
 uname -a
@@ -175,9 +178,8 @@ export CLICOLOR=1
 export TERM="xterm-color" 
 
 # export PATH=/usr/local/opt/gcc7/bin:$PATH
-
-
 export PATH="/usr/local/opt/gc/lib/gcc/7:$PATH"
+
 ## GNU GCC/ BINUTILS SUPPORT
 ## brew install binutils
 export PATH="/usr/local/opt/binutils/bin:$PATH"
@@ -194,10 +196,6 @@ export PATH="/usr/local/opt/gnu-sed/libexec/gnubin:$PATH"
 
 ## GNU GCC setup for OSX
 ## brew install gcc
-# export CC=/usr/local/bin/gcc-6
-# export CXX=/usr/local/bin/g++-6
-# export CPP=/usr/local/bin/cpp-6
-# export LD=//usr/local/bin/gcc-6
 export PATH="/usr/local/opt/cmake/bin:$PATH"
 export PATH="/usr/local/opt/make/bin:$PATH"
 export PATH="/usr/local/opt/gmp/lib:$PATH" 
@@ -215,21 +213,12 @@ export PATH="/usr/local/opt/dex2jar/bin:$PATH"
 ## brew install rstudio
 export PATH=/Applications/RStudio.app/Contents/MacOS:$PATH
 
-## Jupyter Notebook Support
-JAVA_HOME=$(/usr/libexec/java_home)
-SPARK_HOME="/usr/local/opt/apache-spark/libexec"
-export PYTHONPATH=$SPARK_HOME/python:$SPARK_HOME/python/build:$PYTHONPATH
-export PYSPARK_DRIVER_PYTHON=python
-# export PYTHONPATH=$SPARK_HOME/python/lib/py4j-0.10.4-src.zip:$PYTHONPATH
-# export PYSPARK_DRIVER_PYTHON_OPTS=notebook
-
 ## QT Setup
 export PATH="/usr/local/opt/qt/bin:$PATH"
 
 ## MAC Developer Commandline Support
 # export PATH=/Library/Developer/CommandLineTools/usr/bin:$PATH
-export PATH=$PATH:$SPARK_HOME
-export JAYCONFIG=./env.json
+
 ## Heroku setup
 export PATH="/usr/local/heroku/bin:$PATH"
 
@@ -238,34 +227,44 @@ export PATH="/Library/Developer/Toolchains/swift-latest.xctoolchain/usr/bin:$PAT
 
 # TOMEE-PLUS
 export PATH="$PATH:/usr/local/opt/tomee-plus/libexec/bin"
-#nodejs support
+
+# Node.js support
 # export PATH=$PATH:~/.npm-packages/bin
 export PATH="$PATH:/usr/local/opt/node/bin:~/.npm/npm/bin"
-
 
 # Android support on MAC
 export ANDROID_HOME=~/Library/Android/sdk
 export PATH=$PATH:~/Library/Android/sdk/platform-tools
 #android toolbox binary excutable 
-export PATH=$PATH:~/Library/Android/sdk/tools 
+export PATH=$PATH:~/Library/Android/sdk/tools
+
 # Golang support / Blueprint Support # https://blue-jay.github.io/
+# export JAYCONFIG=./env.json
 export JAYCONFIG=$HOME/golang/bluejay_env.json
 #/usr/local/go/bin
 export GOPATH=$HOME/golang
-export GOROOT=/usr/local/opt/go/libexec
+export GOROOT="/usr/local/opt/go/libexec"
 export PATH=$PATH:$GOPATH/bin
 export PATH=$PATH:$GOROOT/bin
-# export GOPATH=$HOME/work
 
 # scala support in Intellij
 export SCALA_HOME=/usr/local/opt/scala/idea
 
-# Spark Support  start-master.sh
+# Apache Spark Support  start-master.sh
 # http://spark.apache.org/docs/latest/spark-standalone.html
+SPARK_HOME="/usr/local/opt/apache-spark/libexec"
+export PYTHONPATH=$SPARK_HOME/python:$SPARK_HOME/python/build:$PYTHONPATH
+export PYSPARK_DRIVER_PYTHON=python
+export PATH=$PATH:$SPARK_HOME
 export PATH=$PATH:/usr/local/opt/apache-spark/bin
-export PATH=$PATH:/usr/local/opt/apache-spark/2.1.1/libexec/sbin
+export PATH=$PATH:/usr/local/opt/apache-spark/libexec/sbin
+
+## Jupyter Notebook Support
+# export PYTHONPATH=$SPARK_HOME/python/lib/py4j-0.10.4-src.zip:$PYTHONPATH
+# export PYSPARK_DRIVER_PYTHON_OPTS=notebook
 
 # Java Support
+JAVA_HOME=$(/usr/libexec/java_home)
 # export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-9.jdk/Contents/Home
 # export JAVA6_HOME="/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home"
 # export JAVA8_HOME="/Library/Java/JavaVirtualMachines/jdk1.8.0_131.jdk/Contents/Home/jre"
@@ -274,8 +273,7 @@ export PATH=$PATH:/usr/local/opt/apache-spark/2.1.1/libexec/sbin
 # alias mysql=/usr/local/mysql/bin/mysql
 # alias mysqladmin=/usr/local/mysql/bin/mysqladmin
 
-#tensorflow support
-
+# Tensorflow support
 # Mac OS X, CPU only, Python 2.7:
 # export TF_BINARY_URL=https://storage.googleapis.com/tensorflow/mac/cpu/tensorflow-0.12.1-py2-none-any.whl
 
@@ -295,7 +293,7 @@ source $(brew --prefix)/etc/bash_completion
 
  export PATH=$PATH:/usr/local/opt/openssl/lib
 
-#!/bin/bash
+
 #  ---------------------------------------------------------------------------
 #
 #  Description:  This file holds all my BASH configurations and aliases
@@ -464,13 +462,19 @@ ffe () { find . -name '*'"$@" ; }  # ffe:      Find file whose name ends with a 
 #   5.  PROCESS MANAGEMENT
 #   ---------------------------
 
-#   findPid: find out the pid of a specified process
+#   findpid: find out the pid of a specified process
 #   -----------------------------------------------------
 #       Note that the command name can be specified via a regex
 #       E.g. findPid '/d$/' finds pids of all processes with names ending in 'd'
 #       Without the 'sudo' it will only find processes of the current user
+#   Example : findpid bash
 #   -----------------------------------------------------
-    findPid () { lsof -t -c "$@" ; }
+    alias findpid="lsof -t -c"
+	# function ppid() { 
+	# 	echo $! >test.pid | cat test.pid 
+	# }
+
+## This script helps you find out the pid of a process on specific port
 
 #   memHogsTop, memHogsPs:  Find memory hogs
 #   -----------------------------------------------------
@@ -494,14 +498,12 @@ ffe () { find . -name '*'"$@" ; }  # ffe:      Find file whose name ends with a 
 
 #   my_ps: List processes owned by my user:
 #   ------------------------------------------------------------
-    my_ps() { ps $@ -u $USER -o pid,%cpu,%mem,start,time,bsdtime,command ; }
-
+    function my_ps() { ps $@ -u $USER -o pid,%cpu,%mem,start,time,bsdtime,command ; }
 
 #   ---------------------------
 #   6.  NETWORKING
 #   ---------------------------
 
-alias myip2='dig +short myip.opendns.com @resolver1.opendns.com' ##  Public facing IP Address
 alias servall='sudo kill $(lsof -t -i:80,443,8080)&& echo "Killed processs on 80,443,8080"' # Reset all Http ports
 alias netCons='lsof -i'                             # netCons:      Show all open TCP/IP sockets
 alias flushDNS='dscacheutil -flushcache'            # flushDNS:     Flush out the DNS Cache
@@ -532,7 +534,7 @@ alias showBlocked='sudo ipfw list'                  # showBlocked:  All ipfw rul
 #   7.  SYSTEMS OPERATIONS & INFORMATION
 #   ---------------------------------------
 
-alias mountReadWrite='/sbin/mount -uw /'    # mountReadWrite:   For use when booted into single-user
+	alias mountReadWrite='/sbin/mount -uw /'    # mountReadWrite:   For use when booted into single-user
 
 #   cleanupDS:  Recursively delete .DS_Store files
 #   -------------------------------------------------------------------
@@ -561,11 +563,12 @@ alias apacheRestart='sudo apachectl graceful'           # apacheRestart:    Rest
 alias editHosts='sudo edit /etc/hosts'                  # editHosts:        Edit /etc/hosts file
 alias herr='tail /var/log/httpd/error_log'              # herr:             Tails HTTP error logs
 alias apacheLogs="less +F /var/log/apache2/error_log"   # Apachelogs:   Shows apache error logs
-httpHeaders () { /usr/bin/curl -I -L $@ ; }             # httpHeaders:      Grabs headers from web page
 
-#   httpDebug:  Download a web page and show info on what took time
-#   -------------------------------------------------------------------
-    httpDebug () { /usr/bin/curl $@ -o /dev/null -w "dns: %{time_namelookup} connect: %{time_connect} pretransfer: %{time_pretransfer} starttransfer: %{time_starttransfer} total: %{time_total}\n" ; }
+# httpHeaders:      Grabs headers from web page
+# example : httpHeaders www.google.com
+alias httpHeaders="/usr/bin/curl -I -L"            
+# httpDebug:  Download a web page and show info on what took time
+function httpDebug () { /usr/bin/curl $@ -o /dev/null -w "dns: %{time_namelookup} connect: %{time_connect} pretransfer: %{time_pretransfer} starttransfer: %{time_starttransfer} total: %{time_total}\n" ; }
 
 
 #   ---------------------------------------
@@ -611,7 +614,7 @@ httpHeaders () { /usr/bin/curl -I -L $@ ; }             # httpHeaders:      Grab
 #     fi
 # fi
 
-DU="/usr/local/bin/dup.sh"
+DU=/usr/local/bin/dup.sh
 
 #For MacOSX, install coreutils (which includes greadlink)
 # $brew install coreutils
@@ -624,21 +627,21 @@ fi
 SHELL_HISTORY=~/.dropshell_history
 DU_OPT="-q"
 #BIN_DEPS="id $READLINK ls basename ls pwd cut"
-VERSION="0.2"
+DU_VERSION="0.2"
 
 umask 077
 
 #Dependencies check
-#for i in $BIN_DEPS; do
+# for i in $BIN_DEPS; do
 #    which $i > /dev/null
 #    if [ $? -ne 0 ]; then
 #        echo -e "Error: Required program could not be found: $i"
 #        return 1
 #    fi
-#done
+# done
 
 #Check DropBox Uploader
-if [ ! -f "$DU" ]; then
+if [ ! -f "$DU" ] ; then
     echo "Dropbox Uploader not found: $DU"
     echo "Please change the 'DU' variable according to the Dropbox Uploader location."
     return 1
@@ -646,16 +649,7 @@ else
     DU=$($READLINK -m "$DU")
 fi
 
-#Returns the current user
-function get_current_user
-{
-    id -nu
-}
-
-function normalize_path
-{
-    $READLINK -m "$1"
-}
+alias normalize_path="$READLINK -m"
 
 ################
 #### START  ####
@@ -663,7 +657,7 @@ function normalize_path
 
 
 history -r "$SHELL_HISTORY"
-username=$(get_current_user)
+username=$(id -nu) ##  or $(whoami)
 
 #Initial Working Directory
 
@@ -1178,12 +1172,6 @@ function runmega() {
 }
 
 
-## This script brings you to npm global module directory
-function cnpm() {
-     cd /usr/local/lib/node_modules
-}
-
-
 ## Reference : 
 ## This script help you build ios and android app easier.
 ## Usage : capp
@@ -1695,6 +1683,8 @@ function big10() {
 ## Requirement : curl iprout2mac
 ## Author: Ralic Lo
 
+alias myip2='dig +short myip.opendns.com @resolver1.opendns.com' ##  Public facing IP Address
+
 function myip3() {
     echo "options: Private IP -- (aws)  | (goog)le | (eth0)"
     echo "options: Public  IP -- (pub)lic ip"
@@ -1930,10 +1920,6 @@ function cmquery() {
     echo "execute script:" $src
     chrome-cli execute "$src" -t $(cmnow)
     unset src
-}
-
-function ppid() {
-    echo $! >test.pid | cat test.pid
 }
 
 function cmk() {
@@ -2254,6 +2240,8 @@ function ccmake() {
     echo "cmake --build _builds/foo/debug --config Debug --target install"
 }
 
+## This script helps find all href links from a file.
+
 function findlinks() {
     sed -n 's/.*href="\([^"]*\).*/\1/p' "$@"
 }
@@ -2552,7 +2540,7 @@ alias time="gtime -v"
 alias python=python3
 alias tar=gtar
 alias make="gmake $MAKEJOBS"
-alias gopy3="cd /usr/local/lib/python3.6/site-packages"
+
 export PATH="/usr/local/opt/texinfo/bin:$PATH"
 # export PATH="/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS6.1.sdk/usr/include/:$PATH"
 export PATH="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/4.2/include:$PATH"
@@ -2592,5 +2580,18 @@ export PATH="/usr/local/opt/sqlite/bin:$PATH"
 alias airport="/System/Library/PrivateFrameworks/Apple80211.framework/Resources/airport"
 alias nets="/usr/sbin/networksetup -listallhardwareports"
 
+## Customized package path
+alias gopy3="cd /usr/local/lib/python3.6/site-packages"
+alias gonpm="cd /usr/local/lib/node_modules"
+
 ### List of Setting
 mvn -version
+
+## Example : portid 80
+
+	function portid () { 
+	 sport="$@"
+	 lsof -i:$sport
+	 echo "------"
+	 echo "Port:"$sport",PID=" $(lsof -i:$sport | grep $(whoami) | awk '{print $2}');
+	}
