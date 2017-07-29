@@ -17,20 +17,35 @@
 
 #For MacOSX, install coreutils (which includes greadlink)
 # $brew install coreutils
+
+### For Linux/Debian
 if [ "$(uname -s)" == "Linux" ]; then
     READLINK="readlink"
 	export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
 	export MANPATH="/home/linuxbrew/.linuxbrew/share/man:$MANPATH"
 	export INFOPATH="/home/linuxbrew/.linuxbrew/share/info:$INFOPATH"
 	OPT_PREFIX=/home/linuxbrew/.linuxbrew/opt
+	JAVA_HOME=$OPT_PREFIX/jdk
+	LTOFLAGS="-flto -m64 -m32" 
 fi
 
+### For MacOS/Darwin
 if [ "$(uname -s)" == "Darwin" ]; then
     READLINK="greadlink"
     alias sll='/Applications/Sublime\ Text.app/Contents/MacOS/Sublime\ Text'
 	MACOSX_DEPLOYMENT_TARGET=$(sw_vers | grep ProductVersion | awk '{print $2}')
 	export MACOSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET"
 	OPT_PREFIX=/usr/local/opt
+	LTOFLAGS="-flto -m32" 
+	
+	# Java Support
+	JAVA_HOME=$(/usr/libexec/java_home)
+	# export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-9.jdk/Contents/Home
+	# export JAVA6_HOME="/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home"
+	# export JAVA8_HOME="/Library/Java/JavaVirtualMachines/jdk1.8.0_131.jdk/Contents/Home/jre"
+
+	alias cc="clang-4.0"
+	alias gcc="gcc-7 -Ofast"
 fi
 
 #alias sll='/opt/sublime_text/sublime_text'
@@ -39,19 +54,18 @@ system_VER=64
 # https://gcc.gnu.org/onlinedocs/gcc-4.9.2/gcc/Optimize-Options.html
 # MPIFLAG=" -lelan lmpi"
 # http://www.netlib.org/benchmark/hpl/results.html
-LTOFLAGS="-flto -m64 -m32" #-m32 ## Unknown -flto-compression-level  ## LTOFLAS Controls 
+
+#-m32 ## Unknown -flto-compression-level  ## LTOFLAS Controls 
 MAKEJOBS="-j8"
 MachineFLAGS="-mmmx -msse $LTOFLAGS" # -lpthread
-MATHFLAGS="-ffast-math -fno-signed-zeros $MachineFLAGS -ffp-contract=fast" #-mfpmath=sse+387 
-alias cc="clang-4.0"
-alias gcc="gcc-7 -Ofast"
+MATHFLAGS="-ffast-math -fno-signed-zeros -ffp-contract=fast $MachineFLAGS " #-mfpmath=sse+387 
 
 ##http://www.netlib.org/benchmark/hpl/results.html
 CC="cc"  ## change gcc to cc // 2017-06-08
 CPP="cc -E"  ## change gcc to cc // 2017-06-08
 CXX="g++"
 CXXCPP="g++ -E"
-CFLAGS="-Ofast -fomit-frame-pointer $MATHFLAGS -funroll-loops"
+CFLAGS="-Ofast -fomit-frame-pointer -funroll-loops  $MATHFLAGS"
 CXXFLAGS="-Ofast $MATHFLAGS "
 FFLAGS="$CFLAGS  $MATHFLAGS "
 
@@ -271,7 +285,7 @@ export SCALA_HOME=$OPT_PREFIX/scala/idea
 # Apache Spark Support  start-master.sh
 # http://spark.apache.org/docs/latest/spark-standalone.html
 SPARK_HOME="$OPT_PREFIX/apache-spark/libexec"
-export PYTHONPATH=$SPARK_HOME/python:$SPARK_HOME/python/build:$PYTHONPATH
+export PYTHONPATH=$SPARK_HOME/python:$SPARK_HOME/python/build:$PYTHONPATH:/usr/local/lib/python3.6/site-packages
 export PYSPARK_DRIVER_PYTHON=python
 export PATH=$PATH:$SPARK_HOME
 export PATH=$PATH:$OPT_PREFIX/apache-spark/bin
@@ -280,12 +294,6 @@ export PATH=$PATH:$OPT_PREFIX/apache-spark/libexec/sbin
 ## Jupyter Notebook Support
 # export PYTHONPATH=$SPARK_HOME/python/lib/py4j-0.10.4-src.zip:$PYTHONPATH
 # export PYSPARK_DRIVER_PYTHON_OPTS=notebook
-
-# Java Support
-JAVA_HOME=$(/usr/libexec/java_home)
-# export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-9.jdk/Contents/Home
-# export JAVA6_HOME="/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home"
-# export JAVA8_HOME="/Library/Java/JavaVirtualMachines/jdk1.8.0_131.jdk/Contents/Home/jre"
 
 # Mysql Support
 # alias mysql=/usr/local/mysql/bin/mysql
@@ -2323,7 +2331,7 @@ function idf () {
 }
 
 function gobrew() {
-    if [ "$(uname -s)" == "darwin" ]; then
+    if [ "$(uname -s)" == "Darwin" ]; then
         cd /usr/local/Homebrew/Library/Taps/homebrew/homebrew-core/Formula
     else
         cd /home/linuxbrew/.linuxbrew/Homebrew/Library/Taps/homebrew/homebrew-core/Formula/
