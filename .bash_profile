@@ -270,7 +270,7 @@ export PATH="$PATH:$OPT_PREFIX/tomee-plus/libexec/bin"
 # Node.js support
 # REF: https://nodesource.com/blog/configuring-your-npmrc-for-an-optimal-node-js-environment/
 export PATH="$PATH:$OPT_PREFIX/node/bin"
-export PATH="~/.npm/bin:$PATH"
+export PATH="~/work/.npm/bin:$PATH"
 
 # Android support on MAC
 export ANDROID_HOME=~/Library/Android/sdk
@@ -2344,8 +2344,15 @@ function idf () {
 }
 
 function bot() {
-		brew  --build-bottle "$@"
+		brew install "$@" --build-bottle 
 }
+
+function brewbot() {
+	unlink /usr/local/bin/python
+	unset PYTHONPATH;unalias python;brew upgrade --build-bottle
+	ln -s /usr/local/bin/python3 /usr/local/bin/python
+}
+
 function gobrew() {
     if [ "$(uname -s)" == "Darwin" ]; then
         cd /usr/local/Homebrew/Library/Taps/homebrew/homebrew-core/Formula
