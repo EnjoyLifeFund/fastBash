@@ -261,8 +261,9 @@ export PATH="/Library/Developer/Toolchains/swift-latest.xctoolchain/usr/bin:$PAT
 export PATH="$PATH:$OPT_PREFIX/tomee-plus/libexec/bin"
 
 # Node.js support
-# export PATH=$PATH:~/.npm-packages/bin
-export PATH="$PATH:$OPT_PREFIX/node/bin:~/.npm/npm/bin"
+# REF: https://nodesource.com/blog/configuring-your-npmrc-for-an-optimal-node-js-environment/
+export PATH="$PATH:$OPT_PREFIX/node/bin"
+export PATH="~/.npm/bin:$PATH"
 
 # Android support on MAC
 export ANDROID_HOME=~/Library/Android/sdk
