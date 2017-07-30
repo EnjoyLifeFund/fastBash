@@ -48,11 +48,11 @@ if [ "$(uname -s)" == "Darwin" ]; then
     function sll() {
     	'/Applications/Sublime Text.app/Contents/MacOS/Sublime Text' $@  >& /dev/null
     }
-    ## For quick return to terminal-in folder
-    orig=$(pwd);alias prev='cd $orig';   
 fi
 
 ## Universal workspace for two or more versions of macOS development
+alias apps='cd /Volumes/data/Applications'
+alias linkapps='ln -s /Volumes/data/Applications $(pwd)/apps'   
 alias work='cd /Volumes/data/WorkSpace'
 alias linkwork='ln -s /Volumes/data/WorkSpace $(pwd)/work'
 
@@ -387,8 +387,13 @@ alias mv='mv -iv'                           # Preferred 'mv' implementation
 alias mkdir='mkdir -pv'                     # Preferred 'mkdir' implementation
 alias ls="ls --color=auto"					# Ensure ls will display color
 alias ll='ls -FGlAhp --color=auto'          # Preferred 'ls' implementation
+
+cd() { prevfolder=$(pwd);builtin cd "$@"; ll; } # Always list directory contents upon 'cd'
+termfolder=$(pwd);
+alias orig='cd $termfolder' ## Quick return to terminal-login folder
+alias prev='cd $prevfolder' ## prev -- Quick switching between two folders.  2017/07/30
+
 alias less='less -FSRXc'                    # Preferred 'less' implementation
-cd() { builtin cd "$@"; ll; }               # Always list directory contents upon 'cd'
 alias cd..='cd ../'                         # Go back 1 directory level (for fast typers)
 alias ..='cd ../'                           # Go back 1 directory level
 alias ...='cd ../../'                       # Go back 2 directory levels
