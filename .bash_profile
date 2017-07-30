@@ -17,7 +17,6 @@
 
 #For MacOSX, install coreutils (which includes greadlink)
 # $brew install coreutils
-
 ### For Linux/Debian
 if [ "$(uname -s)" == "Linux" ]; then
     READLINK="readlink"
@@ -32,7 +31,6 @@ fi
 ### For MacOS/Darwin
 if [ "$(uname -s)" == "Darwin" ]; then
     READLINK="greadlink"
-    alias sll='/Applications/Sublime\ Text.app/Contents/MacOS/Sublime\ Text'
 	MACOSX_DEPLOYMENT_TARGET=$(sw_vers | grep ProductVersion | awk '{print $2}')
 	export MACOSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET"
 	OPT_PREFIX=/usr/local/opt
@@ -46,9 +44,18 @@ if [ "$(uname -s)" == "Darwin" ]; then
 
 	alias cc="clang-4.0"
 	alias gcc="gcc-7 -Ofast"
+
+    function sll() {
+    	'/Applications/Sublime Text.app/Contents/MacOS/Sublime Text' $@  >& /dev/null
+    }
+    ## For quick return to terminal-in folder
+    orig=$(pwd);alias prev='cd $orig';   
 fi
 
-#alias sll='/opt/sublime_text/sublime_text'
+## Universal workspace for two or more versions of macOS development
+alias work='cd /Volumes/data/WorkSpace'
+alias linkwork='ln -s /Volumes/data/WorkSpace $(pwd)/work'
+
 ## Add this line for some python3 packages installation
 system_VER=64
 # https://gcc.gnu.org/onlinedocs/gcc-4.9.2/gcc/Optimize-Options.html
@@ -2308,7 +2315,7 @@ function gitpy3 () {
   #  git commit -m "Add Travis-CI"
     git push origin
     # gh pr --submit $owner --title "Convert to Python3" --description " using : find . -name "*.py" | xargs 2to3 -w"
-	echo 'gh pr --submit $owner --title "Convert to Python3" --description " using : find . -name "*.py" | xargs 2to3 -w"'
+	echo 'gh pr --submit $owner --title "Convert to Python3" --description " using : find . -name "*.py" | xargs 2to3-3.6 -w"'
  }
 
 ## This script help remove the last character of a file, whatever it is 
@@ -2331,6 +2338,9 @@ function idf () {
 	cat idf.summary
 }
 
+function bot() {
+		brew  --build-bottle "$@"
+}
 function gobrew() {
     if [ "$(uname -s)" == "Darwin" ]; then
         cd /usr/local/Homebrew/Library/Taps/homebrew/homebrew-core/Formula
@@ -2438,16 +2448,63 @@ function brewcc () {
     rm  ~/Library/Caches/Homebrew/*
 }
 
-## This script helps relocate nodejs libs to User folder , .npm/lib
-## Verify by using "npm config list"
-## ## vi .npmrc
 
-function rejs() {
-	mkdir -p ~/.npm
-	yes|cp -rf $OPT_PREFIX/node/lib/node_modules/npm ~/.npm/npm
-	npm config --global set prefix "~/.npm/npm"
-	npm config list
-	npm list -g --depth=1
+function multijobs() { 
+tee multijobs.sh <<-'EOF'
+	echo "[Info] default job file name = hello.txt"
+	if [[ $# -eq 0 ]] 
+		then
+			filename=hello.txt ## commands TBD
+		else
+			filename=$1
+	fi
+	folder=runners  ## runners to remmember where the runner is
+	begin=1 ## Beginning lines, default : 1
+	range=$(wc $filename -l | awk '{print $1}') ## threshold for TBD files.
+	processX=10 ## create how many sub-processes
+	sleeper=1 ## sleeper how many secs
+	count=0;
+	mkdir $folder
+	for ((i=$begin;i<=range;i++)); do
+	        if [ $((i%processX)) -eq 0 ]
+	            then
+	                # cline $((i)) $filename 
+	                cline $((i)) $filename > $folder/run.$((i))
+	                . $folder/run.$((i)) &
+	                echo "[Info] Line: "$count , "Sleep " $sleeper " secs"
+	                sleep $sleeper
+	        	else
+	                #cline $((i)) $filename
+	                cline $((i)) $filename > $folder/run.$((i))
+	                . $folder/run.$((i)) &
+	        fi
+	        count=$((count+1))
+	done
+	echo "[INFO] Process list -- "$filename "completed"
+	ls $folder
+	echo "[INFO] Say ((yes)) to remove temp folder:"
+	read option
+	case $option in
+	        yes)
+	            rm $folder/run.*
+	            rmdir $folder
+	        ;;
+	                *)
+	            echo "[Info]enter "$folder" to cleanup records."
+	        ;;
+	esac
+EOF
+	
+	chmod 700 multijobs.sh
+
+	echo "[Info] Generated multijob runner"
+	echo "[Info] ex: ./multijobs jobs.file "
+	echo "filename = hello.txt ## @param filename to run"
+	echo "begin=1 ## Beginning line"
+	echo "range=@endofline ##  @param Track to the last line of file"
+	echo "processX=10 ## @param how many sub-processes in a batch"
+	echo "sleeper=1 ## @param  how many secs in next batch run"
+	echo "count=0;"
 }
 
 ### List all npm packages with only one level of depth
@@ -2458,9 +2515,10 @@ alias ng1="npm list -g --depth=1"
 ## git clone https://github.com/ralic/cellar-backup
 
 function rebrew () {
-	brew upgrade
+	unset PYTHONPATH
     brew list | grep -v gettext | grep -v gcc| grep -v llvm| xargs brew deps --tree
-    brew list | xargs brew reinstall
+    brew list | xargs brew reinstall --build-bottle
+	brew upgrade
     ## --overwrite --force 
 }
 
@@ -2476,15 +2534,16 @@ function brewtree () {
 ## This script helps porting all python scripts to python3 .
 ## Prequisite : brew install xargs python3
 function allpy3() {
-    find . -name '*.py' | xargs 2to3 -w
+    find . -name '*.py' | xargs 2to3-3.6 -w
     find . -name '*.bak' | xargs  rm
 }
 
 
 ## This script helps upgrading all installed python3 packages.
 function repip3() {
-	pip3 list | grep -v lxml | grep -v mercurial | grep -v alembic |  grep -v Alchemy | grep -v Twisted |awk '{print "pip3 install --upgrade "$1}' > pip3.update
-    . pip3.update
+	pip3 list |awk '{print "echo [Info]pip3 install --upgrade "$1";pip3 install --upgrade "$1}' > pip3.update
+	. pip3.update
+	rm -rf ~/Library/Caches/pip
 }
 
 ## This script generates hello_1~ hello_100 into hello.txt
@@ -2609,13 +2668,14 @@ export PATH="$OPT_PREFIX/readline/bin:$PATH"
 export PATH="$OPT_PREFIX/sphinx-doc/bin:$PATH"
 export PATH="$OPT_PREFIX/tcl-tk/bin:$PATH"
 export PATH="$OPT_PREFIX/sqlite/bin:$PATH"
+export PATH="$PATH:/Volumes/data/WorkSpace"
 alias airport="/System/Library/PrivateFrameworks/Apple80211.framework/Resources/airport"
 alias nets="/usr/sbin/networksetup -listallhardwareports"
 
 ## Customized package path
 alias gopy3="cd /usr/local/lib/python3.6/site-packages"
 alias gonpm="cd /usr/local/lib/node_modules"
+export HOMEBREW_BUILD_FROM_SOURCE=1
 
 ### List of Setting
-mvn -version
-
+alias mvp='mvn -version'
