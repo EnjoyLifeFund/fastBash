@@ -21,11 +21,12 @@
 if [ "$(uname -s)" == "Linux" ]; then
     READLINK="readlink"
 	export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
+        export PATH="/home/linuxbrew/.linuxbrew/sbin:$PATH"
 	export MANPATH="/home/linuxbrew/.linuxbrew/share/man:$MANPATH"
 	export INFOPATH="/home/linuxbrew/.linuxbrew/share/info:$INFOPATH"
 	OPT_PREFIX=/home/linuxbrew/.linuxbrew/opt
 	JAVA_HOME=$OPT_PREFIX/jdk
-	LTOFLAGS="-flto -m64 -m32" 
+	LTOFLAGS="-flto -m64" 
 fi
 
 ### For MacOS/Darwin
@@ -2344,7 +2345,9 @@ function idf () {
 }
 
 function bot() {
-		brew install "$@" --build-bottle 
+	brew upgrade "$@" --build-bottle
+	brew install "$@" --build-bottle 
+	brew postinstall "$@"
 }
 
 function brewbot() {
@@ -2530,13 +2533,13 @@ function rebrew () {
 	unset PYTHONPATH
     brew list | grep -v gettext | grep -v gcc| grep -v llvm| xargs brew deps --tree
     brew list | xargs brew reinstall --build-bottle
+    brew list | xargs brew postinstall
 	brew upgrade
     ## --overwrite --force 
 }
 
 function relinkbrew () {
-   brew list | xargs brew link --overwrite --force 
-}
+   brew list | xargs brew postinstall
 
 function brewtree () {
     brew upgrade
