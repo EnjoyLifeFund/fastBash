@@ -21,7 +21,7 @@
 if [ "$(uname -s)" == "Linux" ]; then
     READLINK="readlink"
 	export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
-        export PATH="/home/linuxbrew/.linuxbrew/sbin:$PATH"
+    export PATH="/home/linuxbrew/.linuxbrew/sbin:$PATH"
 	export MANPATH="/home/linuxbrew/.linuxbrew/share/man:$MANPATH"
 	export INFOPATH="/home/linuxbrew/.linuxbrew/share/info:$INFOPATH"
 	OPT_PREFIX=/home/linuxbrew/.linuxbrew/opt
@@ -110,6 +110,7 @@ case $system_VER in
         # export LD_LIBRARY_PATH="/usr/lib:$LD_LIBRARY_PATH"
     ;;
 esac
+
 ### EXTRA LIB FLAGS ###
 export CC="$CC"
 export CPP="$CPP"
@@ -139,7 +140,11 @@ export OPENBLAS_NUM_THREADS=32
 ## brew reinstall llvm -v --all-targets --rtti --shared --with-asan --with-clang --use-clang
 export PATH="$OPT_PREFIX/llvm/bin:$PATH"
 
-##valgrind support
+## apr (apache rutime support)
+export PATH="$OPT_PREFIX/apr/bin:$OPT_PREFIIX/apr-util/bin:$PATH"
+
+
+##algrind support
 export PATH="$OPT_PREFIX/valgrind/bin:$PATH"
 
 ### GLOBALS ###
@@ -153,6 +158,7 @@ function macdev() {
 	echo "COMPILERS:" $CC @ $CPP @ $CXX @ $CXXCPP 
 	echo "FLAGS:"  $ARCHFLAGS @  @ $CFLAGS @ $FFLAGS @ $LDFLAGS
 }
+
 
 #   Set Local Paths
 #   ------------------------------------------------------------
@@ -172,6 +178,9 @@ JAVA_9="/Library/Java/JavaVirtualMachines/jdk-9.jdk/Contents/Home"
 
 
 ## To be clean up
+##Mesos Support
+export PATH=$PATH:$OPT_PREFIX/apr/libexec/include/apr-1
+
 # LDFLAGS="-L$OPT_PREFIX/openssl@1.1/lib $LDFLAGS"
 # CPPFLAGS="-I$OPT_PREFIX/openssl@1.1/include $CPPFLAGS"
 # LDFLAGS="-L$OPT_PREFIX/zlib/lib $LDFLAGS"
@@ -293,8 +302,9 @@ export SCALA_HOME=$OPT_PREFIX/scala/idea
 
 # Apache Spark Support  start-master.sh
 # http://spark.apache.org/docs/latest/spark-standalone.html
-SPARK_HOME="$OPT_PREFIX/apache-spark/libexec"
-export PYTHONPATH=$SPARK_HOME/python:$SPARK_HOME/python/build:$PYTHONPATH:/usr/local/lib/python3.6/site-packages
+export SPARK_HOME="$OPT_PREFIX/apache-spark/libexec"
+export PYTHONPATH="$SPARK_HOME/python:$SPARK_HOME/python/build:$PYTHONPATH"
+export PYTHONPATH="/usr/local/lib/python3.6/site-packages$PYTHONPATH"
 export PYSPARK_DRIVER_PYTHON=python
 export PATH=$PATH:$SPARK_HOME
 export PATH=$PATH:$OPT_PREFIX/apache-spark/bin
@@ -326,7 +336,7 @@ source $(brew --prefix)/etc/bash_completion
 # source <(kubectl completion bash)
 [ -f /usr/local/etc/bash_completion ] && . /usr/local/etc/bash_completion
 
- export PATH=$PATH:$OPT_PREFIX/openssl/lib
+export PATH=$PATH:$OPT_PREFIX/openssl/lib
 
 
 #  ---------------------------------------------------------------------------
@@ -391,6 +401,7 @@ alias ll='ls -FGlAhp --color=auto'          # Preferred 'ls' implementation
 
 cd() { prevfolder=$(pwd);builtin cd "$@"; ll; } # Always list directory contents upon 'cd'
 termfolder=$(pwd);
+
 alias orig='cd $termfolder' ## Quick return to terminal-login folder
 alias prev='cd $prevfolder' ## prev -- Quick switching between two folders.  2017/07/30
 
@@ -444,7 +455,7 @@ alias make10mb='mkfile 10m ./10MB.dat'      # make10mb:     Creates a file of 10
 
 #   cdf:  'Cd's to frontmost window of MacOS Finder
 #   ------------------------------------------------------
-    cdf () {
+cdf () {
         currFolderPath=$( /usr/bin/osascript <<EOT
             tell application "Finder"
                 try
@@ -458,7 +469,7 @@ EOT
         )
         echo "cd to \"$currFolderPath\""
         cd "$currFolderPath"
-    }
+}
 
 #   extract:  Extract most know archives with one command
 #   ---------------------------------------------------------
@@ -1496,9 +1507,8 @@ fi
 }
 
 function jd-cli () {
-export DIRNAME=/usr/local/bin/
-java -jar "$DIRNAME/jd-cli.jar" $@ 
-
+	export DIRNAME=/usr/local/bin/
+	java -jar "$DIRNAME/jd-cli.jar" $@ 
 }
 
 ## This script helps to bootstrap speak/translate service
@@ -2465,6 +2475,7 @@ function brewcc () {
 
 
 function multijobs() { 
+
 tee multijobs.sh <<-'EOF'
 	echo "[Info] default job file name = hello.txt"
 	if [[ $# -eq 0 ]] 
@@ -2540,6 +2551,7 @@ function rebrew () {
 
 function relinkbrew () {
    brew list | xargs brew postinstall
+}
 
 function brewtree () {
     brew upgrade
@@ -2641,10 +2653,9 @@ function unlikeg() {
 ## NOTE :
 ## It's ok to replace gcc c++ by gcc-7
 alias jp3="python3 /usr/local/lib/python3.6/site-packages/jupyter.py notebook"
-alias find="gfind" ## [Waring Ignored] gfind: invalid argument `-1d' to `-mtime'
-alias time="gtime -v"
+# alias find="gfind" ## [Waring Ignored] gfind: invalid argument `-1d' to `-mtime'
+# alias time="gtime -v"
 alias python=python3
-alias tar=gtar
 alias make="gmake $MAKEJOBS"
 
 export PATH="$OPT_PREFIX/texinfo/bin:$PATH"
@@ -2669,7 +2680,6 @@ export WELD_HOME="~/.weld"
 
 ## OPT lib support
 ## Reset lib prioirty
-
 export PATH="$OPT_PREFIX/m4/bin:$PATH"
 export PATH="$OPT_PREFIX/gettext/bin:$PATH"
 export PATH="$OPT_PREFIX/bison/bin:$PATH"
@@ -2690,7 +2700,7 @@ alias nets="/usr/sbin/networksetup -listallhardwareports"
 ## Customized package path
 alias gopy3="cd /usr/local/lib/python3.6/site-packages"
 alias gonpm="cd /usr/local/lib/node_modules"
-export HOMEBREW_BUILD_FROM_SOURCE=1
+# export HOMEBREW_BUILD_FROM_SOURCE=1
 
 ### List of Setting
 alias mvp='mvn -version'
