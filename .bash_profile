@@ -19,13 +19,20 @@
 # $brew install coreutils
 ### For Linux/Debian
 if [ "$(uname -s)" == "Linux" ]; then
+    ## Linuxbrew Support
+    # MASTERUSER= your username or $(whoami)
+    #sudo ln -s -f /home/linuxbrew/.linuxbrew/Cellar  /usr/local/Cellar ##  -f : force
+    #sudo ln -s -f /home/linuxbrew/.linuxbrew/Homebrew  /usr/local/Homebrew ##  -f : force
+    #sudo ln -s -f /home/linuxbrew/.linuxbrew/opt  /usr/local/opt ## -f : force
+    #find /usr/local -maxdepth 1 -type l | xargs chown -R $MASTERUSER ## Change ownership 
+
     READLINK="readlink"
 	export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
     export PATH="/home/linuxbrew/.linuxbrew/sbin:$PATH"
 	export MANPATH="/home/linuxbrew/.linuxbrew/share/man:$MANPATH"
 	export INFOPATH="/home/linuxbrew/.linuxbrew/share/info:$INFOPATH"
-	OPT_PREFIX=/home/linuxbrew/.linuxbrew/opt
-	JAVA_HOME=$OPT_PREFIX/jdk
+	OPT_PREFIX="/home/linuxbrew/.linuxbrew/opt"
+	JAVA_HOME="$OPT_PREFIX/jdk"
 	LTOFLAGS="-flto -m64" 
 fi
 
@@ -34,7 +41,7 @@ if [ "$(uname -s)" == "Darwin" ]; then
     READLINK="greadlink"
 	MACOSX_DEPLOYMENT_TARGET=$(sw_vers | grep ProductVersion | awk '{print $2}')
 	export MACOSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET"
-	OPT_PREFIX=/usr/local/opt
+	OPT_PREFIX="/usr/local/opt"
 	LTOFLAGS="-flto -m32" 
 	
 	# Java Support
@@ -45,6 +52,10 @@ if [ "$(uname -s)" == "Darwin" ]; then
 
 	alias cc="clang-4.0"
 	alias gcc="gcc-7 -Ofast"
+	# alias find="gfind" ## [Waring Ignored] gfind: invalid argument `-1d' to `-mtime'
+	# alias time="gtime -v"
+	# alias python=python3
+	# alias tar=gtar
 
     function sll() {
     	'/Applications/Sublime Text.app/Contents/MacOS/Sublime Text' $@  >& /dev/null
@@ -65,16 +76,18 @@ system_VER=64
 
 #-m32 ## Unknown -flto-compression-level  ## LTOFLAS Controls 
 MAKEJOBS="-j8"
-MachineFLAGS="-mmmx -msse $LTOFLAGS" # -lpthread
-MATHFLAGS="-ffast-math -fno-signed-zeros -ffp-contract=fast $MachineFLAGS " #-mfpmath=sse+387 
+alias make="gmake $MAKEJOBS"
 
+MachineFLAGS="-mmmx -msse $LTOFLAGS" # -lpthread
+MATHFLAGS="-Ofast -ffast-math -fno-signed-zeros -ffp-contract=fast $MachineFLAGS " #-mfpmath=sse+387 
+#-ffast-math
 ##http://www.netlib.org/benchmark/hpl/results.html
 CC="cc"  ## change gcc to cc // 2017-06-08
 CPP="cc -E"  ## change gcc to cc // 2017-06-08
 CXX="g++"
 CXXCPP="g++ -E"
-CFLAGS="-Ofast -fomit-frame-pointer -funroll-loops  $MATHFLAGS"
-CXXFLAGS="-Ofast $MATHFLAGS "
+CFLAGS="-fomit-frame-pointer -funroll-loops  $MATHFLAGS"
+CXXFLAGS="$MATHFLAGS "
 FFLAGS="$CFLAGS  $MATHFLAGS "
 
 ### set gcc debug flag, Default is not to use it.
@@ -110,7 +123,6 @@ case $system_VER in
         # export LD_LIBRARY_PATH="/usr/lib:$LD_LIBRARY_PATH"
     ;;
 esac
-
 ### EXTRA LIB FLAGS ###
 export CC="$CC"
 export CPP="$CPP"
@@ -140,11 +152,7 @@ export OPENBLAS_NUM_THREADS=32
 ## brew reinstall llvm -v --all-targets --rtti --shared --with-asan --with-clang --use-clang
 export PATH="$OPT_PREFIX/llvm/bin:$PATH"
 
-## apr (apache rutime support)
-export PATH="$OPT_PREFIX/apr/bin:$OPT_PREFIIX/apr-util/bin:$PATH"
-
-
-##algrind support
+##valgrind support
 export PATH="$OPT_PREFIX/valgrind/bin:$PATH"
 
 ### GLOBALS ###
@@ -159,7 +167,6 @@ function macdev() {
 	echo "FLAGS:"  $ARCHFLAGS @  @ $CFLAGS @ $FFLAGS @ $LDFLAGS
 }
 
-
 #   Set Local Paths
 #   ------------------------------------------------------------
 export PATH="/usr/local/bin:/usr/local:/usr/local/sbin:/usr/local/include:$PATH"
@@ -171,16 +178,8 @@ export PATH="/usr/local/mysql/bin:$CASSANDRA_HOME/bin:$FORREST_HOME/bin:$PATH"
 
 ## Java 9 Support 
 JAVA_9="/Library/Java/JavaVirtualMachines/jdk-9.jdk/Contents/Home"
-### For aws server
-#export APACHE_HOME=/home/ec2-user
-#export PATH=$PATH:$APACHE_HOME/apache-maven-3.5.0/bin:$APACHE_HOME/apache-cassandra-3.7/bin
-
-
 
 ## To be clean up
-##Mesos Support
-export PATH=$PATH:$OPT_PREFIX/apr/libexec/include/apr-1
-
 # LDFLAGS="-L$OPT_PREFIX/openssl@1.1/lib $LDFLAGS"
 # CPPFLAGS="-I$OPT_PREFIX/openssl@1.1/include $CPPFLAGS"
 # LDFLAGS="-L$OPT_PREFIX/zlib/lib $LDFLAGS"
@@ -302,9 +301,8 @@ export SCALA_HOME=$OPT_PREFIX/scala/idea
 
 # Apache Spark Support  start-master.sh
 # http://spark.apache.org/docs/latest/spark-standalone.html
-export SPARK_HOME="$OPT_PREFIX/apache-spark/libexec"
-export PYTHONPATH="$SPARK_HOME/python:$SPARK_HOME/python/build:$PYTHONPATH"
-export PYTHONPATH="/usr/local/lib/python3.6/site-packages$PYTHONPATH"
+SPARK_HOME="$OPT_PREFIX/apache-spark/libexec"
+export PYTHONPATH=$SPARK_HOME/python:$SPARK_HOME/python/build:$PYTHONPATH:/usr/local/lib/python3.6/site-packages
 export PYSPARK_DRIVER_PYTHON=python
 export PATH=$PATH:$SPARK_HOME
 export PATH=$PATH:$OPT_PREFIX/apache-spark/bin
@@ -336,7 +334,7 @@ source $(brew --prefix)/etc/bash_completion
 # source <(kubectl completion bash)
 [ -f /usr/local/etc/bash_completion ] && . /usr/local/etc/bash_completion
 
-export PATH=$PATH:$OPT_PREFIX/openssl/lib
+ export PATH=$PATH:$OPT_PREFIX/openssl/lib
 
 
 #  ---------------------------------------------------------------------------
@@ -401,7 +399,6 @@ alias ll='ls -FGlAhp --color=auto'          # Preferred 'ls' implementation
 
 cd() { prevfolder=$(pwd);builtin cd "$@"; ll; } # Always list directory contents upon 'cd'
 termfolder=$(pwd);
-
 alias orig='cd $termfolder' ## Quick return to terminal-login folder
 alias prev='cd $prevfolder' ## prev -- Quick switching between two folders.  2017/07/30
 
@@ -455,7 +452,7 @@ alias make10mb='mkfile 10m ./10MB.dat'      # make10mb:     Creates a file of 10
 
 #   cdf:  'Cd's to frontmost window of MacOS Finder
 #   ------------------------------------------------------
-cdf () {
+    cdf () {
         currFolderPath=$( /usr/bin/osascript <<EOT
             tell application "Finder"
                 try
@@ -469,13 +466,14 @@ EOT
         )
         echo "cd to \"$currFolderPath\""
         cd "$currFolderPath"
-}
+    }
 
 #   extract:  Extract most know archives with one command
 #   ---------------------------------------------------------
     extract () {
         if [ -f $1 ] ; then
           case $1 in
+          	*.tar.xz)	 tar xf  $1		;;
             *.tar.bz2)   tar xjf $1     ;;
             *.tar.gz)    tar xzf $1     ;;
             *.bz2)       bunzip2 $1     ;;
@@ -499,7 +497,7 @@ EOT
 #   4.  SEARCHING
 #   ---------------------------
 
-alias qfind="gfind . -name "                 # qfind:    Quickly search for file
+alias qfind="find . -name "                 # qfind:    Quickly search for file
 ff () { find . -name "$@" ; }      # ff:       Find file under the current directory
 ffs () { find . -name "$@"'*' ; }  # ffs:      Find file whose name starts with a given string
 ffe () { find . -name '*'"$@" ; }  # ffe:      Find file whose name ends with a given string
@@ -1507,8 +1505,9 @@ fi
 }
 
 function jd-cli () {
-	export DIRNAME=/usr/local/bin/
-	java -jar "$DIRNAME/jd-cli.jar" $@ 
+export DIRNAME=/usr/local/bin/
+java -jar "$DIRNAME/jd-cli.jar" $@ 
+
 }
 
 ## This script helps to bootstrap speak/translate service
@@ -2360,6 +2359,29 @@ function bot() {
 	brew postinstall "$@"
 }
 
+function brewpush() {
+	brewP="$1"
+	echo "[Usage] brewpush recipe name"
+	echo "[Alert] Please make sure you 'brew audit --new-formula <foo>' !!  (yes?)"
+	read option
+	case $option in
+	        yes)
+					brew update 
+					# required in more ways than you think (initializes the brew git repository if you don't already have it)
+					cd $(brew --repo homebrew/core)
+					# Create a new git branch for your formula so your pull request is easy to
+					# modify if any changes come up during review.
+					# git checkout -b <some-descriptive-name>
+					git add Formula/$brewP.rb
+					git commit
+	        ;;
+	        *)
+				return 0
+	        ;;
+	esac
+	echo "[Info] Read for Pull request -- https://github.com/Homebrew/brew/blob/master/docs/How-To-Open-a-Homebrew-Pull-Request.md "
+}
+
 function brewbot() {
 	unlink /usr/local/bin/python
 	unset PYTHONPATH;unalias python;brew upgrade --build-bottle
@@ -2475,7 +2497,6 @@ function brewcc () {
 
 
 function multijobs() { 
-
 tee multijobs.sh <<-'EOF'
 	echo "[Info] default job file name = hello.txt"
 	if [[ $# -eq 0 ]] 
@@ -2544,14 +2565,14 @@ function rebrew () {
 	unset PYTHONPATH
     brew list | grep -v gettext | grep -v gcc| grep -v llvm| xargs brew deps --tree
     brew list | xargs brew reinstall --build-bottle
-    brew list | xargs brew postinstall
 	brew upgrade
     ## --overwrite --force 
 }
 
 function relinkbrew () {
-   brew list | xargs brew postinstall
+   brew list | xargs brew link --overwrite --force 
 }
+
 
 function brewtree () {
     brew upgrade
@@ -2584,7 +2605,7 @@ function hi100() {
 ## This sciprt help search for all executables
 
 function findexe() {
-	 gfind . -executable -type f | xargs file > execfile.log;
+	 find . -executable -type f | xargs file > execfile.log;
 	 cat execfile.log
 }
 
@@ -2653,11 +2674,6 @@ function unlikeg() {
 ## NOTE :
 ## It's ok to replace gcc c++ by gcc-7
 alias jp3="python3 /usr/local/lib/python3.6/site-packages/jupyter.py notebook"
-# alias find="gfind" ## [Waring Ignored] gfind: invalid argument `-1d' to `-mtime'
-# alias time="gtime -v"
-alias python=python3
-alias make="gmake $MAKEJOBS"
-
 export PATH="$OPT_PREFIX/texinfo/bin:$PATH"
 # export PATH="/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS6.1.sdk/usr/include/:$PATH"
 export PATH="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/4.2/include:$PATH"
@@ -2680,6 +2696,7 @@ export WELD_HOME="~/.weld"
 
 ## OPT lib support
 ## Reset lib prioirty
+export PATH="$OPT_PREFIX/gpatch/bin:$PATH"
 export PATH="$OPT_PREFIX/m4/bin:$PATH"
 export PATH="$OPT_PREFIX/gettext/bin:$PATH"
 export PATH="$OPT_PREFIX/bison/bin:$PATH"
@@ -2700,7 +2717,7 @@ alias nets="/usr/sbin/networksetup -listallhardwareports"
 ## Customized package path
 alias gopy3="cd /usr/local/lib/python3.6/site-packages"
 alias gonpm="cd /usr/local/lib/node_modules"
-# export HOMEBREW_BUILD_FROM_SOURCE=1
+export HOMEBREW_BUILD_FROM_SOURCE=1
 
 ### List of Setting
 alias mvp='mvn -version'
