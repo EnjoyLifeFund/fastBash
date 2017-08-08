@@ -52,10 +52,10 @@ if [ "$(uname -s)" == "Darwin" ]; then
 
 	alias cc="clang-4.0"
 	alias gcc="gcc-7 -Ofast"
-	# alias find="gfind" ## [Waring Ignored] gfind: invalid argument `-1d' to `-mtime'
-	# alias time="gtime -v"
-	# alias python=python3
-	# alias tar=gtar
+	alias find="gfind" ## [Waring Ignored] gfind: invalid argument `-1d' to `-mtime'
+	alias time="gtime -v"
+	alias python=python3
+	alias tar=gtar
 
     function sll() {
     	'/Applications/Sublime Text.app/Contents/MacOS/Sublime Text' $@  >& /dev/null
@@ -79,7 +79,7 @@ MAKEJOBS="-j8"
 alias make="gmake $MAKEJOBS"
 
 MachineFLAGS="-mmmx -msse $LTOFLAGS" # -lpthread
-MATHFLAGS="-Ofast -ffast-math -fno-signed-zeros -ffp-contract=fast $MachineFLAGS " #-mfpmath=sse+387 
+MATHFLAGS="-ffast-math -Ofast -fno-signed-zeros -ffp-contract=fast $MachineFLAGS " #-mfpmath=sse+387 
 #-ffast-math
 ##http://www.netlib.org/benchmark/hpl/results.html
 CC="cc"  ## change gcc to cc // 2017-06-08
@@ -180,10 +180,10 @@ export PATH="/usr/local/mysql/bin:$CASSANDRA_HOME/bin:$FORREST_HOME/bin:$PATH"
 JAVA_9="/Library/Java/JavaVirtualMachines/jdk-9.jdk/Contents/Home"
 
 ## To be clean up
-# LDFLAGS="-L$OPT_PREFIX/openssl@1.1/lib $LDFLAGS"
-# CPPFLAGS="-I$OPT_PREFIX/openssl@1.1/include $CPPFLAGS"
-# LDFLAGS="-L$OPT_PREFIX/zlib/lib $LDFLAGS"
-# CPPFLAGS="-I$OPT_PREFIX/zlib/include $CPPFLAGS"
+ LDFLAGS="-L$OPT_PREFIX/openssl@1.1/lib $LDFLAGS"
+ CPPFLAGS="-I$OPT_PREFIX/openssl@1.1/include $CPPFLAGS"
+ LDFLAGS="-L$OPT_PREFIX/zlib/lib $LDFLAGS"
+ CPPFLAGS="-I$OPT_PREFIX/zlib/include $CPPFLAGS"
 # LDFLAGS="-L$OPT_PREFIX/libpng/lib $LDFLAGS"
 # CPPFLAGS="-I$OPT_PREFIX/libpng/include $CPPFLAGS"
 # LDFLAGS="-L$OPT_PREFIX/libxml2/lib $LDFLAGS"
@@ -200,8 +200,8 @@ JAVA_9="/Library/Java/JavaVirtualMachines/jdk-9.jdk/Contents/Home"
 # LDFLAGS="-L$OPT_PREFIX/llvm/lib -Wl,-rpath,$OPT_PREFIX/llvm/lib $LDFLAGS"
 LDFLAGS="-L$OPT_PREFIX/llvm/lib $LDFLAGS" 
 CPPFLAGS="-I$OPT_PREFIX/llvm/include $CPPFLAGS"
-# LDFLAGS="-L$OPT_PREFIX/openblas/lib $LDFLAGS"
-# CPPFLAGS="-I$OPT_PREFIX/openblas/include $CPPFLAGS"
+ LDFLAGS="-L$OPT_PREFIX/openblas/lib $LDFLAGS"
+ CPPFLAGS="-I$OPT_PREFIX/openblas/include $CPPFLAGS"
 # LDFLAGS="-L$OPT_PREFIX/qt/lib $LDFLAGS"
 # CPPFLAGS="-I$OPT_PREFIX/qt/include $CPPFLAGS"
 # LDFLAGS="-L$OPT_PREFIX/opencv3/lib $LDFLAGS"
@@ -473,7 +473,6 @@ EOT
     extract () {
         if [ -f $1 ] ; then
           case $1 in
-          	*.tar.xz)	 tar xf  $1		;;
             *.tar.bz2)   tar xjf $1     ;;
             *.tar.gz)    tar xzf $1     ;;
             *.bz2)       bunzip2 $1     ;;
@@ -2271,7 +2270,6 @@ function filex() {
     # mysql -u root -p
     # kill `cat /mysql-data-directory/host_name.pid`
 
-
 ## This script help creates a bootable mac usb for sierra
 ## Change usbName for different Volume.
 ## https://support.apple.com/en-us/HT201372
@@ -2356,7 +2354,14 @@ function idf () {
 function bot() {
 	brew upgrade "$@" --build-bottle
 	brew install "$@" --build-bottle 
+	brew bottle "$@"
+	brew cleanup
 	brew postinstall "$@"
+}
+
+function brewbottles() {
+	brew list | awk '{print "brew bottle "$1}' >bottle.list
+	. bottle.list > bottle.log
 }
 
 function brewpush() {
@@ -2379,7 +2384,6 @@ function brewpush() {
 				return 0
 	        ;;
 	esac
-	echo "[Info] Read for Pull request -- https://github.com/Homebrew/brew/blob/master/docs/How-To-Open-a-Homebrew-Pull-Request.md "
 }
 
 function brewbot() {
