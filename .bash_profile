@@ -17,6 +17,8 @@
 
 #For MacOSX, install coreutils (which includes greadlink)
 # $brew install coreutils
+
+# export HOMEBREW_BUILD_FROM_SOURCE=1
 ### For Linux/Debian
 if [ "$(uname -s)" == "Linux" ]; then
     ## Linuxbrew Support
@@ -33,6 +35,7 @@ if [ "$(uname -s)" == "Linux" ]; then
 	export INFOPATH="/home/linuxbrew/.linuxbrew/share/info:$INFOPATH"
 	OPT_PREFIX="/home/linuxbrew/.linuxbrew/opt"
 	JAVA_HOME="$OPT_PREFIX/jdk"
+	system_VER=64
 	LTOFLAGS="-flto -m64" 
 fi
 
@@ -42,7 +45,8 @@ if [ "$(uname -s)" == "Darwin" ]; then
 	MACOSX_DEPLOYMENT_TARGET=$(sw_vers | grep ProductVersion | awk '{print $2}')
 	export MACOSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET"
 	OPT_PREFIX="/usr/local/opt"
-	LTOFLAGS="-flto -m32" 
+	system_VER=32
+	LTOFLAGS="-flto -m32 " # -fopenmp -m32
 	
 	# Java Support
 	JAVA_HOME=$(/usr/libexec/java_home)
@@ -51,6 +55,7 @@ if [ "$(uname -s)" == "Darwin" ]; then
 	# export JAVA8_HOME="/Library/Java/JavaVirtualMachines/jdk1.8.0_131.jdk/Contents/Home/jre"
 
 	alias cc="clang-4.0"
+	CC="clang4.0"
 	alias gcc="gcc-7 -Ofast"
 	alias find="gfind" ## [Waring Ignored] gfind: invalid argument `-1d' to `-mtime'
 	alias time="gtime -v"
@@ -69,7 +74,6 @@ alias work='cd /Volumes/data/WorkSpace'
 alias linkwork='ln -s /Volumes/data/WorkSpace $(pwd)/work'
 
 ## Add this line for some python3 packages installation
-system_VER=64
 # https://gcc.gnu.org/onlinedocs/gcc-4.9.2/gcc/Optimize-Options.html
 # MPIFLAG=" -lelan lmpi"
 # http://www.netlib.org/benchmark/hpl/results.html
@@ -80,6 +84,7 @@ alias make="gmake $MAKEJOBS"
 
 MachineFLAGS="-mmmx -msse $LTOFLAGS" # -lpthread
 MATHFLAGS="-ffast-math -Ofast -fno-signed-zeros -ffp-contract=fast $MachineFLAGS " #-mfpmath=sse+387 
+
 #-ffast-math
 ##http://www.netlib.org/benchmark/hpl/results.html
 CC="cc"  ## change gcc to cc // 2017-06-08
@@ -180,18 +185,20 @@ export PATH="/usr/local/mysql/bin:$CASSANDRA_HOME/bin:$FORREST_HOME/bin:$PATH"
 JAVA_9="/Library/Java/JavaVirtualMachines/jdk-9.jdk/Contents/Home"
 
 ## To be clean up
- LDFLAGS="-L$OPT_PREFIX/openssl@1.1/lib $LDFLAGS"
- CPPFLAGS="-I$OPT_PREFIX/openssl@1.1/include $CPPFLAGS"
- LDFLAGS="-L$OPT_PREFIX/zlib/lib $LDFLAGS"
- CPPFLAGS="-I$OPT_PREFIX/zlib/include $CPPFLAGS"
+LDFLAGS="-L/usr/local/opt/portable-expat/lib $LDFLAGS"
+CPPFLAGS="-I$OPT_PREFIX/portable-expat/include $CPPFLAGS"
+LDFLAGS="-L$OPT_PREFIX/openssl@1.1/lib $LDFLAGS"
+CPPFLAGS="-I$OPT_PREFIX/openssl@1.1/include $CPPFLAGS"
+LDFLAGS="-L$OPT_PREFIX/zlib/lib $LDFLAGS"
+CPPFLAGS="-I$OPT_PREFIX/zlib/include $CPPFLAGS"
 # LDFLAGS="-L$OPT_PREFIX/libpng/lib $LDFLAGS"
 # CPPFLAGS="-I$OPT_PREFIX/libpng/include $CPPFLAGS"
 # LDFLAGS="-L$OPT_PREFIX/libxml2/lib $LDFLAGS"
-# LDFLAGS="-L$OPT_PREFIX/gettext/lib $LDFLAGS"
 # CPPFLAGS="-I$OPT_PREFIX/libxml2/include $CPPFLAGS"
+# LDFLAGS="-L$OPT_PREFIX/gettext/lib $LDFLAGS"
 # CPPFLAGS="-I$OPT_PREFIX/gettext/include $CPPFLAGS"
-# LDFLAGS="-L$OPT_PREFIX/readline/lib $LDFLAGS"
-# CPPFLAGS="-I$OPT_PREFIX/readline/include $CPPFLAGS"
+LDFLAGS="-L$OPT_PREFIX/readline/lib $LDFLAGS"
+CPPFLAGS="-I$OPT_PREFIX/readline/include $CPPFLAGS"
 # LDFLAGS="-L$OPT_PREFIX/bison/lib $LDFLAGS"
 # LDFLAGS="-L$OPT_PREFIX/libarchive/lib $LDFLAGS"
 # CPPFLAGS="-I$OPT_PREFIX/libarchive/include $CPPFLAGS"
@@ -302,7 +309,12 @@ export SCALA_HOME=$OPT_PREFIX/scala/idea
 # Apache Spark Support  start-master.sh
 # http://spark.apache.org/docs/latest/spark-standalone.html
 SPARK_HOME="$OPT_PREFIX/apache-spark/libexec"
-export PYTHONPATH=$SPARK_HOME/python:$SPARK_HOME/python/build:$PYTHONPATH:/usr/local/lib/python3.6/site-packages
+# export PYTHONPATH=$PYTHONPATH:$SPARK_HOME/python:$SPARK_HOME/python/build
+export PYTHONPATH=/usr/local/lib/python3.6/site-packages
+# export PYTHONPATH=$PYTHONPATH:/usr/local/lib/python2.7/site-packages
+alias pip3="export PYTHONPATH=/usr/local/lib/python3.6/site-packages;pip3"
+alias pypath3="export PYTHONPATH=/usr/local/lib/python2.7/site-packages"
+alias pypath2="export PYTHONPATH=/usr/local/lib/python2.7/site-packages"
 export PYSPARK_DRIVER_PYTHON=python
 export PATH=$PATH:$SPARK_HOME
 export PATH=$PATH:$OPT_PREFIX/apache-spark/bin
@@ -317,12 +329,6 @@ export PATH=$PATH:$OPT_PREFIX/apache-spark/libexec/sbin
 # alias mysqladmin=/usr/local/mysql/bin/mysqladmin
 
 # Tensorflow support
-# Mac OS X, CPU only, Python 2.7:
-# export TF_BINARY_URL=https://storage.googleapis.com/tensorflow/mac/cpu/tensorflow-0.12.1-py2-none-any.whl
-
-# Mac OS X, GPU enabled, Python 2.7:
-# export TF_BINARY_URL=https://storage.googleapis.com/tensorflow/mac/gpu/tensorflow_gpu-0.12.1-py2-none-any.whl
-
 # Mac OS X, CPU only, Python 3.4 or 3.5:
 # export TF_BINARY_URL=https://storage.googleapis.com/tensorflow/mac/cpu/tensorflow-0.12.1-py3-none-any.whl
 
@@ -333,9 +339,6 @@ export PATH=$PATH:$OPT_PREFIX/apache-spark/libexec/sbin
 source $(brew --prefix)/etc/bash_completion
 # source <(kubectl completion bash)
 [ -f /usr/local/etc/bash_completion ] && . /usr/local/etc/bash_completion
-
- export PATH=$PATH:$OPT_PREFIX/openssl/lib
-
 
 #  ---------------------------------------------------------------------------
 #
@@ -390,12 +393,15 @@ source $(brew --prefix)/etc/bash_completion
 #   -----------------------------
 #   2.  MAKE TERMINAL BETTER
 #   -----------------------------
+# alias gtime='/usr/local/opt/gnu-time/bin/time'
+# alias gmake='/usr/local/opt/make/bin/gmake'
 
 alias cp='cp -iv'                           # Preferred 'cp' implementation
 alias mv='mv -iv'                           # Preferred 'mv' implementation
 alias mkdir='mkdir -pv'                     # Preferred 'mkdir' implementation
 alias ls="ls --color=auto"					# Ensure ls will display color
 alias ll='ls -FGlAhp --color=auto'          # Preferred 'ls' implementation
+alias sofu="du -d 1 * | sort -n -k1" ## Sort file using du , accending , --max-depth means -d
 
 cd() { prevfolder=$(pwd);builtin cd "$@"; ll; } # Always list directory contents upon 'cd'
 termfolder=$(pwd);
@@ -473,6 +479,7 @@ EOT
     extract () {
         if [ -f $1 ] ; then
           case $1 in
+          	*.tar.xz)    tar xf $1      ;;
             *.tar.bz2)   tar xjf $1     ;;
             *.tar.gz)    tar xzf $1     ;;
             *.bz2)       bunzip2 $1     ;;
@@ -957,6 +964,15 @@ function dcat
         echo -e "cat: missing operand"
         echo -e "syntax: cat <FILE>"
     fi
+}
+### Tensorboard Support ###
+function tengo() {
+	tensorboard --host 127.0.0.1 --logdir="$@" &
+	open http://127.0.0.1:6006
+}
+
+function tenx() {
+	kill $(! lsof -i:6006 | grep localhost:6006 |awk '{print $2}' )
 }
 
 ### HADOOP SERVER COMMANDS###
@@ -1503,10 +1519,9 @@ fi
  javap -sysinfo -c "$@"
 }
 
-function jd-cli () {
-export DIRNAME=/usr/local/bin/
-java -jar "$DIRNAME/jd-cli.jar" $@ 
-
+function jdcli () {
+    export DIRNAME=/usr/local/bin/
+    java -jar "$DIRNAME/jd-cli.jar" $@ 
 }
 
 ## This script helps to bootstrap speak/translate service
@@ -2222,17 +2237,19 @@ gps () {
 ## this script help randomize mac_address for wifi
 
 function myoldmac() {
-    spoof list
     ifconfig en1 | awk '/ether/{print $2}'
+    spoof list
 }
 
 function mymac() {
-    spoof list
     ifconfig en1 | awk '/ether/{print $2}'
+    spoof list
 }
 
 function mynewmac() {
     sudo spoof randomize en0
+    sudo spoof randomize en4 
+    spoof list
 }
 
 ## AWK SPECIAL CHARACTER, single quote and dobule quote
@@ -2700,6 +2717,7 @@ export WELD_HOME="~/.weld"
 
 ## OPT lib support
 ## Reset lib prioirty
+export PATH="$PATH:$OPT_PREFIX/openssl/lib"
 export PATH="$OPT_PREFIX/gpatch/bin:$PATH"
 export PATH="$OPT_PREFIX/m4/bin:$PATH"
 export PATH="$OPT_PREFIX/gettext/bin:$PATH"
@@ -2717,11 +2735,11 @@ export PATH="$OPT_PREFIX/sqlite/bin:$PATH"
 export PATH="$PATH:/Volumes/data/WorkSpace"
 alias airport="/System/Library/PrivateFrameworks/Apple80211.framework/Resources/airport"
 alias nets="/usr/sbin/networksetup -listallhardwareports"
+export PATH="/Users/dojo/work/.npm/bin/:$PATH"
 
 ## Customized package path
 alias gopy3="cd /usr/local/lib/python3.6/site-packages"
 alias gonpm="cd /usr/local/lib/node_modules"
-export HOMEBREW_BUILD_FROM_SOURCE=1
 
 ### List of Setting
 alias mvp='mvn -version'
