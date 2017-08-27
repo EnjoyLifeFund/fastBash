@@ -38,6 +38,7 @@ if [ "$(uname -s)" == "Linux" ]; then
 	system_VER=64
 	LTOFLAGS="-flto -m64" 
 fi
+# -arch x86-64 -arch i386  -Xarch_x86_64
 
 ### For MacOS/Darwin
 if [ "$(uname -s)" == "Darwin" ]; then
@@ -45,8 +46,8 @@ if [ "$(uname -s)" == "Darwin" ]; then
 	MACOSX_DEPLOYMENT_TARGET=$(sw_vers | grep ProductVersion | awk '{print $2}')
 	export MACOSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET"
 	OPT_PREFIX="/usr/local/opt"
-	system_VER=32
-	LTOFLAGS="-flto -m32 " # -fopenmp -m32
+	system_VER=64
+	LTOFLAGS="-flto" # -m32  # -fopenmp -m32 -m64
 	
 	# Java Support
 	JAVA_HOME=$(/usr/libexec/java_home)
@@ -54,7 +55,7 @@ if [ "$(uname -s)" == "Darwin" ]; then
 	# export JAVA6_HOME="/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home"
 	# export JAVA8_HOME="/Library/Java/JavaVirtualMachines/jdk1.8.0_131.jdk/Contents/Home/jre"
 
-	alias cc="clang-4.0"
+	alias cc="clang-4.0 -v"
 	CC="clang4.0"
 	alias gcc="gcc-7 -Ofast"
 	alias find="gfind" ## [Waring Ignored] gfind: invalid argument `-1d' to `-mtime'
@@ -103,8 +104,9 @@ CMAKE_CXX_FLAGS="-Wall -Ofast $MATHFLAGS"
 CMAKE_CFLAGS="-Wall -Ofast $MATHFLAGS" 
 CMAKE_C_FLAGS="-Wall -Ofast  $MATHFLAGS" 
 CMAKE_CXX_FLAGS_DEBUG="-Wall -Ofast $MATHFLAGS"
+PROJ_LIB="~/work/proj"
+export ARCHFLAGS="-march=native"
 
-# -arch x86-64 -arch i386  -Xarch_x86_64
 case $system_VER in
     32)
         export LDFLAGS="$LDFLAGS"
