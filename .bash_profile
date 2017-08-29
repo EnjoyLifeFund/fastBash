@@ -187,12 +187,12 @@ export PATH="/usr/local/mysql/bin:$CASSANDRA_HOME/bin:$FORREST_HOME/bin:$PATH"
 JAVA_9="/Library/Java/JavaVirtualMachines/jdk-9.jdk/Contents/Home"
 
 ## To be clean up
-LDFLAGS="-L/usr/local/opt/portable-expat/lib $LDFLAGS"
-CPPFLAGS="-I$OPT_PREFIX/portable-expat/include $CPPFLAGS"
+# LDFLAGS="-L$OPT_PREFIX/portable-expat/lib $LDFLAGS"
+# CPPFLAGS="-I$OPT_PREFIX/portable-expat/include $CPPFLAGS"
 LDFLAGS="-L$OPT_PREFIX/openssl@1.1/lib $LDFLAGS"
 CPPFLAGS="-I$OPT_PREFIX/openssl@1.1/include $CPPFLAGS"
-LDFLAGS="-L$OPT_PREFIX/zlib/lib $LDFLAGS"
-CPPFLAGS="-I$OPT_PREFIX/zlib/include $CPPFLAGS"
+# LDFLAGS="-L$OPT_PREFIX/zlib/lib $LDFLAGS"
+# CPPFLAGS="-I$OPT_PREFIX/zlib/include $CPPFLAGS"
 # LDFLAGS="-L$OPT_PREFIX/libpng/lib $LDFLAGS"
 # CPPFLAGS="-I$OPT_PREFIX/libpng/include $CPPFLAGS"
 # LDFLAGS="-L$OPT_PREFIX/libxml2/lib $LDFLAGS"
@@ -2428,6 +2428,26 @@ function gosystem() {
     cd /Library/Preferences/SystemConfiguration
 }
 
+function gitgetsubs() {
+	echo "[Info] Find all submodules directorys : cat submodules.txt"
+	## Remove head and tails , ## Remove 1st line
+	find . -name .git | sed 's/^..\(.*\).....$/\1/'  | sed '1d' > submodules.txt
+	cat submodules.txt 	| awk '{print "cat "$1"/.git/config| grep url"}' > submodules.run
+	. submodules.run |sed 's/^.//'> submodules.urls
+	cat submodules.txt | awk '{print "[submodule \""$1"\"],path="$1}' > submodules.path
+	paste -d"," submodules.path submodules.urls > submodules.txt
+	tr , '\n' < submodules.txt> .gitmodules
+	rm submodules.*
+	cat .gitmodules
+	git submodule
+	git submodule init
+	git submodule sync --recursive
+}
+
+function gitupdates() {
+	git submodules foreach git pull
+}
+
 
 function gitdf() {
 	echo "## This script helps you compare new commmit and previous commit in git"
@@ -2738,6 +2758,7 @@ export PATH="$PATH:/Volumes/data/WorkSpace"
 alias airport="/System/Library/PrivateFrameworks/Apple80211.framework/Resources/airport"
 alias nets="/usr/sbin/networksetup -listallhardwareports"
 export PATH="/Users/dojo/work/.npm/bin/:$PATH"
+export PATH="$OPT_PREFIX/parallel-netcdf/include:$PATH"
 
 ## Customized package path
 alias gopy3="cd /usr/local/lib/python3.6/site-packages"
