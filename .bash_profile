@@ -14,85 +14,172 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### ./configure notes
+#(3) When space is important, we suggest --without-readline, --disable-shared, 
+# and possibly --disable-nls and --disable-dynamic-loading.
 
 #For MacOSX, install coreutils (which includes greadlink)
 # $brew install coreutils
+
+# CC          C compiler command ## gcc
+# CFLAGS      C compiler flags
+# CXX         C++ compiler command ## gcc
+# CXXFLAGS    C++ compiler flags ## gcc-E
+# CPPFLAGS    (Objective) C/C++ preprocessor flags, e.g. -I<include dir> 
+# LDFLAGS     linker flags, e.g. -L<lib dir> 
+# LIBS        libraries to pass to the linker, e.g. -l<library>
+# CPP         C preprocessor ## gcc -E
+# CXXCPP      C++ preprocessor
+
+## DEFAULTS ##
+# FC="gfortran"
+# CXX="gcc" 
+# CPP="gcc -E" ## or g++ -E or gcc -E
+# CXXCPP=" gcc -E" 
+# CC="gcc"
+# HOMEBREW_CC="gcc"
+# HOMEBREW_CXX="gcc -E"
+
+
+# ## GCC ##
+# FC="gfortran-7"
+# CXX="gcc-7" 
+# CPP="gcc-7 -E" ## or g++ -E or gcc -E
+# CXXCPP=" gcc-7 -E" 
+# CC="gcc-7"
+# HOMEBREW_CC="gcc-7"
+# HOMEBREW_CXX="gcc-7 -E"
+
+## CLANG ##
+# CC="cc"
+# CXX="cc" 
+# CPP="gcc -E"
+# CXXCPP="gcc -E"
+ 
+# ## MPI version ##
+FC="mpiftran"
+CC="mpicc"  ## change gcc to cc // 2017-06-08 ## change cc to mpicc //2017-09-07
+CXX="mpicxx" 
+CPP="mpicc -E"  ## change gcc to cc // 2017-06-08 ## change cc to mpicc //2017-09-07
+CXXCPP="clang -E"  ## Note 2017.9.12 -- Using g++7 ok, not ok using clang-5 or mpicpp"
+HOMEBREW_CC="mpicc"
+HOMEBREW_CXX="mpicxx"
+MPIFC="mpifort"
+MPICC="mpicc"  
+MPICPP="mpicc -E" 
+MPICXX="mpicxx"
+
+# --with-cxxflags='-mmic ' \
+# --with-cflags='-mmic '
+#-m32 ## Unknown -flto-compression-level  ## LTOFLAS Controls 
+
+MAKEJOBS="-j8"
+alias cgrep="grep --color=always"
 
 # export HOMEBREW_BUILD_FROM_SOURCE=1
 ### For Linux/Debian
 if [ "$(uname -s)" == "Linux" ]; then
     ## Linuxbrew Support
-    # MASTERUSER= your username or $(whoami)
-    #sudo ln -s -f /home/linuxbrew/.linuxbrew/Cellar  /usr/local/Cellar ##  -f : force
-    #sudo ln -s -f /home/linuxbrew/.linuxbrew/Homebrew  /usr/local/Homebrew ##  -f : force
-    #sudo ln -s -f /home/linuxbrew/.linuxbrew/opt  /usr/local/opt ## -f : force
-    #find /usr/local -maxdepth 1 -type l | xargs chown -R $MASTERUSER ## Change ownership 
-
+    #export MASTERUSER= $(whoami)
+     # sudo mkdir -p /home/linuxbrew
+     # sudo ln -s -f /home/linuxbrew/.linuxbrew/Cellar  /usr/local/Cellar ##  -f : force
+     # sudo ln -s -f /home/linuxbrew/.linuxbrew/Homebrew  /usr/local/Homebrew ##  -f : force
+     # sudo ln -s -f /home/linuxbrew/.linuxbrew/Homebrew/Library  /usr/local/Library ##  -f : force
+     # sudo ln -s -f /home/linuxbrew/.linuxbrew/opt  /usr/local/opt ## -f : force
+    # sudo find /usr/local -maxdepth 1 -type l | awk '{print "sudo chown -R $MASTERUSER "$1}' > chown.run;. chown.run
+    # f:            Opens current directory in Linux Finder
+     alias f='xdg-open ./'
     READLINK="readlink"
 	export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
     export PATH="/home/linuxbrew/.linuxbrew/sbin:$PATH"
 	export MANPATH="/home/linuxbrew/.linuxbrew/share/man:$MANPATH"
 	export INFOPATH="/home/linuxbrew/.linuxbrew/share/info:$INFOPATH"
-	OPT_PREFIX="/home/linuxbrew/.linuxbrew/opt"
 	JAVA_HOME="$OPT_PREFIX/jdk"
 	system_VER=64
-	LTOFLAGS="-flto -m64" 
+	#LTOFLAGS="-flto" # -m64
+	alias make="make $MAKEJOBS"
+	COLOR_FLAG="--color=auto"
+
+    ## Sublime support for debian based linux
+    # sudo ln -s /opt/sublime/sublime_text /usr/bin/subl
+    # echo "deb https://download.sublimetext.com/ apt/stable/" | sudo tee /etc/apt/sources.list.d/sublime-text.list
+    # wget -qO - https://download.sublimetext.com/sublimehq-pub.gpg | sudo apt-key add -
+    # sudo apt-get update ; sudo apt-get install sublime-text
+    alias sll=subl
+    export BREW_PREFIX="/home/linuxbrew/.linuxbrew"
+	export PKG_CONFIG_PATH="$BREW_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
 fi
 # -arch x86-64 -arch i386  -Xarch_x86_64
 
 ### For MacOS/Darwin
 if [ "$(uname -s)" == "Darwin" ]; then
-    READLINK="greadlink"
-	MACOSX_DEPLOYMENT_TARGET=$(sw_vers | grep ProductVersion | awk '{print $2}')
-	export MACOSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET"
-	OPT_PREFIX="/usr/local/opt"
+	 # f:            Opens current directory in MacOS Finder
+    alias f='open -a Finder ./'                
+    # READLINK="greadlink"
+	# MACOSX_DEPLOYMENT_TARGET=$(sw_vers | grep ProductVersion | awk '{print $2}')
+	# export MACOSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET"
+	MACOSX_DEPLOYMENT_TARGET=10.8
 	system_VER=64
-	LTOFLAGS="-flto" # -m32  # -fopenmp -m32 -m64
-	
+	#LTOFLAGS="-flto " # -m32 -fopenmp  -m64 -m32 
 	# Java Support
 	JAVA_HOME=$(/usr/libexec/java_home)
 	# export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-9.jdk/Contents/Home
 	# export JAVA6_HOME="/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home"
 	# export JAVA8_HOME="/Library/Java/JavaVirtualMachines/jdk1.8.0_131.jdk/Contents/Home/jre"
 
-	alias cc="clang-4.0 -v"
-	CC="clang4.0"
-	alias gcc="gcc-7 -Ofast"
-	alias find="gfind" ## [Waring Ignored] gfind: invalid argument `-1d' to `-mtime'
-	alias time="gtime -v"
-	alias python=python3
-	alias tar=gtar
+#   Set default blocksize for ls, df, du
+#   from this: http://hints.macworld.com/comment.php?mode=view&cid=24491
+#   ------------------------------------------------------------
+	export BLOCKSIZE=4096
+	## IMPORTANT Check it by : diskutil info / | grep "Block Size"
 
+	## For mac -- To view du like linux 
+	# function duh () {
+	# 	du -k $1 $2 $3 $4 | awk '{if($1>1024){r=$1%1024;if(r!=0)
+	# 	   {sz=($1-r)/1024}else{sz=$1/1024}print sz"Mt"$2;}
+	# 	   else{print $1"Kt"$2}}'
+	# } 
+	# alias du=duh
+
+	# alias find="gfind" ## [Waring Ignored] gfind: invalid argument `-1d' to `-mtime'
+	# alias time="gtime -v"
+	# alias python=python3
+
+	# alias tar=gtar
+	# alias xargs=gxargs ## Using GNU's xargs to enable -i feature.
+	# ln -s /usr/local/bin/python3 /usr/local/bin/python
+    alias make="gmake $MAKEJOBS"
     function sll() {
     	'/Applications/Sublime Text.app/Contents/MacOS/Sublime Text' $@  >& /dev/null
     }
-fi
 
+    BREW_PREFIX="/usr/local"
+fi
+	
+export PATH="$BREW_PREFIX/bin:$PATH"
+export PATH="$BREW_PREFIX/sbin:$PATH"
+export PATH="$BREW_PREFIX/lib:$PATH"
+export PATH="$BREW_PREFIX/include:$PATH"
+export OPT_PREFIX="$BREW_PREFIX/opt"
 ## Universal workspace for two or more versions of macOS development
 alias apps='cd /Volumes/data/Applications'
 alias linkapps='ln -s /Volumes/data/Applications $(pwd)/apps'   
 alias work='cd /Volumes/data/WorkSpace'
 alias linkwork='ln -s /Volumes/data/WorkSpace $(pwd)/work'
+alias bp3='python3 setup.py bdist > dist.log;python3 setup.py install'
 
 ## Add this line for some python3 packages installation
 # https://gcc.gnu.org/onlinedocs/gcc-4.9.2/gcc/Optimize-Options.html
 # MPIFLAG=" -lelan lmpi"
 # http://www.netlib.org/benchmark/hpl/results.html
 
-#-m32 ## Unknown -flto-compression-level  ## LTOFLAS Controls 
-MAKEJOBS="-j8"
-alias make="gmake $MAKEJOBS"
 
-MachineFLAGS="-mmmx -msse $LTOFLAGS" # -lpthread
+MachineFLAGS="-mmmx  -msse -maes -march=native $LTOFLAGS" # -lpthread
 MATHFLAGS="-ffast-math -Ofast -fno-signed-zeros -ffp-contract=fast $MachineFLAGS " #-mfpmath=sse+387 
 
 #-ffast-math
 ##http://www.netlib.org/benchmark/hpl/results.html
-CC="cc"  ## change gcc to cc // 2017-06-08
-CPP="cc -E"  ## change gcc to cc // 2017-06-08
-CXX="g++"
-CXXCPP="g++ -E"
-CFLAGS="-fomit-frame-pointer -funroll-loops  $MATHFLAGS"
+CFLAGS="-fomit-frame-pointer -funroll-loops  $MATHFLAGS "
 CXXFLAGS="$MATHFLAGS "
 FFLAGS="$CFLAGS  $MATHFLAGS "
 
@@ -101,7 +188,7 @@ FFLAGS="$CFLAGS  $MATHFLAGS "
 alias cpx="cc -c $LDFLAGS $DEBUGFLAG $CFLAGS -Ofast -flto"
 
 CMAKE_CXX_FLAGS="-Wall -Ofast $MATHFLAGS" 
-CMAKE_CFLAGS="-Wall -Ofast $MATHFLAGS" 
+CMAKE_CFLAGS="-Wall -Ofast $CFLAGS $MATHFLAGS" 
 CMAKE_C_FLAGS="-Wall -Ofast  $MATHFLAGS" 
 CMAKE_CXX_FLAGS_DEBUG="-Wall -Ofast $MATHFLAGS"
 PROJ_LIB="~/work/proj"
@@ -109,6 +196,7 @@ export ARCHFLAGS="-march=native"
 
 case $system_VER in
     32)
+		## 
         export LDFLAGS="$LDFLAGS"
         export FFLAGS="$FFLAGS"
         export CFLAGS="$CFLAGS " #$ARCHFLAGS
@@ -135,48 +223,32 @@ export CC="$CC"
 export CPP="$CPP"
 export CXX="$CXX"
 export CXXCPP="$CXXCPP"
-export PATH="$PATH"
 
 
 ## QT Support
-# PKG_CONFIG_PATH="$OPT_PREFIX/qt/lib/pkgconfig:$PKG_CONFIG_PATH"
-
 ## OpenCV3 Support
-# PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$OPT_PREFIX/opencv3/lib/pkgconfig"
-export PATH="$OPT_PREFIX/opencv3/bin:$PATH"
+
+## CUDA SUPPORT ##
+export PATH="/usr/local/cuda/bin:/usr/local/cuda/nvvm/bin:$PATH"
+export LDFLAGS="-L/usr/local/cuda/lib -L/usr/local/cuda/nvvm/lib $LDFLAGS"
+export CPPFLAGS="-I/usr/local/cuda/include -I/usr/local/cuda/nvvm/include $CPPFLAGS"
+
 
 ## e2fslib support
 # export PATH="$(brew --prefix e2fsprogs)/lib:$PATH"
-
-## graphviz support
-export PATH="$OPT_PREFIX/graphviz/bin:$PATH"
-
+## graphviz support 
 ## openblas support
 ## brew install openblas
 export OPENBLAS_NUM_THREADS=32
 
 ## llvm support
 ## brew reinstall llvm -v --all-targets --rtti --shared --with-asan --with-clang --use-clang
-export PATH="$OPT_PREFIX/llvm/bin:$PATH"
-
-##valgrind support
-export PATH="$OPT_PREFIX/valgrind/bin:$PATH"
-
-### GLOBALS ###
-function macdev() {
-	CPPFLAGS="-I/usr/include/ -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include"
-	ARCHFLAGS="-isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk"
-	# LDFLAGS="-L/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib -L/usr/lib"
-	LD_LIBRARY_PATH="/Applications/Xcode.app/Contents/Developer/usr/lib/:$LD_LIBRARY_PATH"
-	PATH="/Applications/Xcode.app/Contents/Developer/usr/bin/:$PATH"
-	echo "________________________________________________________________________________"
-	echo "COMPILERS:" $CC @ $CPP @ $CXX @ $CXXCPP 
-	echo "FLAGS:"  $ARCHFLAGS @  @ $CFLAGS @ $FFLAGS @ $LDFLAGS
-}
+export LDFLAGS="-L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib $LDFLAGS"
+export CPPFLAGS="-I/usr/local/opt/llvm/include -I/usr/local/opt/llvm/include/c++/v1/ $CPPFLAGS"
 
 #   Set Local Paths
 #   ------------------------------------------------------------
-export PATH="/usr/local/bin:/usr/local:/usr/local/sbin:/usr/local/include:$PATH"
+export PATH="/usr/local/bin:/usr/local:/usr/local/sbin:/usr/local/include:/usr/local/lib:$PATH"
 export PATH="/usr/local/mysql/bin:$CASSANDRA_HOME/bin:$FORREST_HOME/bin:$PATH"
 
 ## rJava Support
@@ -186,98 +258,54 @@ export PATH="/usr/local/mysql/bin:$CASSANDRA_HOME/bin:$FORREST_HOME/bin:$PATH"
 ## Java 9 Support 
 JAVA_9="/Library/Java/JavaVirtualMachines/jdk-9.jdk/Contents/Home"
 
-## To be clean up
-# LDFLAGS="-L$OPT_PREFIX/portable-expat/lib $LDFLAGS"
-# CPPFLAGS="-I$OPT_PREFIX/portable-expat/include $CPPFLAGS"
-LDFLAGS="-L$OPT_PREFIX/openssl@1.1/lib $LDFLAGS"
-CPPFLAGS="-I$OPT_PREFIX/openssl@1.1/include $CPPFLAGS"
-# LDFLAGS="-L$OPT_PREFIX/zlib/lib $LDFLAGS"
-# CPPFLAGS="-I$OPT_PREFIX/zlib/include $CPPFLAGS"
-# LDFLAGS="-L$OPT_PREFIX/libpng/lib $LDFLAGS"
-# CPPFLAGS="-I$OPT_PREFIX/libpng/include $CPPFLAGS"
-# LDFLAGS="-L$OPT_PREFIX/libxml2/lib $LDFLAGS"
-# CPPFLAGS="-I$OPT_PREFIX/libxml2/include $CPPFLAGS"
-# LDFLAGS="-L$OPT_PREFIX/gettext/lib $LDFLAGS"
-# CPPFLAGS="-I$OPT_PREFIX/gettext/include $CPPFLAGS"
-LDFLAGS="-L$OPT_PREFIX/readline/lib $LDFLAGS"
-CPPFLAGS="-I$OPT_PREFIX/readline/include $CPPFLAGS"
-# LDFLAGS="-L$OPT_PREFIX/bison/lib $LDFLAGS"
-# LDFLAGS="-L$OPT_PREFIX/libarchive/lib $LDFLAGS"
-# CPPFLAGS="-I$OPT_PREFIX/libarchive/include $CPPFLAGS"
-# LDFLAGS="-L$OPT_PREFIX/valgrind/lib $LDFLAGS" 
-# CPPFLAGS="-I$OPT_PREFIX/valgrind/include $CPPFLAGS"
-# LDFLAGS="-L$OPT_PREFIX/llvm/lib -Wl,-rpath,$OPT_PREFIX/llvm/lib $LDFLAGS"
-LDFLAGS="-L$OPT_PREFIX/llvm/lib $LDFLAGS" 
-CPPFLAGS="-I$OPT_PREFIX/llvm/include $CPPFLAGS"
- LDFLAGS="-L$OPT_PREFIX/openblas/lib $LDFLAGS"
- CPPFLAGS="-I$OPT_PREFIX/openblas/include $CPPFLAGS"
-# LDFLAGS="-L$OPT_PREFIX/qt/lib $LDFLAGS"
-# CPPFLAGS="-I$OPT_PREFIX/qt/include $CPPFLAGS"
-# LDFLAGS="-L$OPT_PREFIX/opencv3/lib $LDFLAGS"
-# CPPFLAGS="-I$OPT_PREFIX/opencv3/include $CPPFLAGS"
-# LDFLAGS="-L/usr/local/lib -L$(brew --prefix e2fsprogs)/lib $LDFLAGS"
-
-
 ## Setting Locale
 ## locale
 # https://www.gnu.org/savannah-checkouts/gnu/libc/manual/html_node/Locale-Categories.html
 
-export ARCHFLAGS="$ARCHFLAGS"
 echo "________________________________________________________________________________"
 export LC_ALL=en_US.UTF-8
 uname -a
-echo "________________________________________________________________________________"
-echo "COMPILERS:" $CC @ $CPP @ $CXX @ $CXXCPP 
-echo "FLAGS:"  $ARCHFLAGS @  @ $CFLAGS @ $FFLAGS @ $LDFLAGS
 
 ## Change CL to be colored for MAC
 export CLICOLOR=1
 export TERM="xterm-color" 
 
 # export PATH=$OPT_PREFIX/gcc7/bin:$PATH
-export PATH="$OPT_PREFIX/gc/lib/gcc/7:$PATH"
+export PATH="$OPT_PREFIX/gcc/lib/gcc/7:$PATH"
 
-## GNU GCC/ BINUTILS SUPPORT
-## brew install binutils
-export PATH="$OPT_PREFIX/binutils/bin:$PATH"
-export PATH="$OPT_PREFIX/binutils/include:$PATH"
-export PATH="$OPT_PREFIX/binutils/lib:$PATH"
 
-export MANPATH="$OPT_PREFIX/gnu-sed/libexec/gnuman:$MANPATH" ## man gsed for gnused
-export MANPATH="$OPT_PREFIX/coreutils/libexec/gnuman:$MANPATH"
-
-export PATH="$OPT_PREFIX/coreutils/libexec/gnubin:$PATH"
-export PATH="$OPT_PREFIX/gnu-sed/libexec/gnubin:$PATH"
-
-# export PATH=$OPT_PREFIX/binutils/2.28/x86_64-apple-darwin16.4.0/bin:$PATH
+## Python include/lib support
+PYVM_VER=python3.6dm ## python3.6dm for debug
+CPPFLAGS="-I/usr/local/opt/python3/include/$PYVM_VER $CPPFLAGS" 
+LDFLAGS="-L/usr/local/opt/python3/lib $LDFLAGS"
 
 ## GNU GCC setup for OSX
-## brew install gcc
-export PATH="$OPT_PREFIX/cmake/bin:$PATH"
-export PATH="$OPT_PREFIX/make/bin:$PATH"
-export PATH="$OPT_PREFIX/gmp/lib:$PATH" 
-export PATH="$OPT_PREFIX/sqlite/bin:$PATH" # type sqlite3 to verfiy
-export PATH="$OPT_PREFIX/curl/bin:$PATH"
-export PATH="$OPT_PREFIX/mingw-w64/bin:$PATH"
-export PATH="$OPT_PREFIX/sqlite/bin:$PATH"
-export PATH="$OPT_PREFIX/curl/bin:$PATH"
-export PATH="$OPT_PREFIX/libarchive/bin:$PATH"
+## GNU GCC/ BINUTILS SUPPORT
+## brew install binutils
+# export PATH="$OPT_PREFIX/mingw-w64/bin:$PATH"
+export MANPATH="$OPT_PREFIX/gnu-sed/libexec/gnuman:$MANPATH" ## man gsed for gnused
+export MANPATH="$OPT_PREFIX/coreutils/libexec/gnuman:$MANPATH"
+export PATH="$OPT_PREFIX/coreutils/libexec/gnubin:$PATH"
+export LDFLAGS="-L/usr/local/Cellar/gcc/7.2.0/lib/gcc/7  $LDFLAGS" 
+export CPPFLAGS="-I/usr/local/Cellar/gcc/7.2.0/lib/gcc/7/gcc/x86_64-apple-darwin17.0.0/7.2.0/include  $LDFLAGS" 
+
+## X11 Support
+export PATH="/opt/X11/bin:$PATH"
+export LDFLAGS="-L/opt/X11/lib $LDFLAGS"
+export CPPFLAGS="-I$/opt/X11/include $CPPFLAGS"
 
 ## Android / Java src code   Support
-export PATH="$OPT_PREFIX/dex2jar/bin:$PATH"
+# export PATH="$OPT_PREFIX/dex2jar/bin:$PATH"
 
 ## Rstudio Support
 ## brew install rstudio
-export PATH=/Applications/RStudio.app/Contents/MacOS:$PATH
+export PATH="/Applications/RStudio.app/Contents/MacOS:$PATH"
 
 ## QT Setup
 export PATH="$OPT_PREFIX/qt/bin:$PATH"
 
 ## MAC Developer Commandline Support
 # export PATH=/Library/Developer/CommandLineTools/usr/bin:$PATH
-
-## Heroku setup
-export PATH="/usr/local/heroku/bin:$PATH"
 
 ##SWIFT SUPPORT
 export PATH="/Library/Developer/Toolchains/swift-latest.xctoolchain/usr/bin:$PATH"
@@ -287,7 +315,6 @@ export PATH="$PATH:$OPT_PREFIX/tomee-plus/libexec/bin"
 
 # Node.js support
 # REF: https://nodesource.com/blog/configuring-your-npmrc-for-an-optimal-node-js-environment/
-export PATH="$PATH:$OPT_PREFIX/node/bin"
 export PATH="~/work/.npm/bin:$PATH"
 
 # Android support on MAC
@@ -300,47 +327,53 @@ export PATH=$PATH:~/Library/Android/sdk/tools
 # export JAYCONFIG=./env.json
 export JAYCONFIG=$HOME/golang/bluejay_env.json
 #/usr/local/go/bin
-export GOPATH=$HOME/golang
+export GOPATH"=$HOME/golang"
 export GOROOT="$OPT_PREFIX/go/libexec"
-export PATH=$PATH:$GOPATH/bin
-export PATH=$PATH:$GOROOT/bin
+export PATH="$PATH:$GOPATH/bin"
+export PATH="$PATH:$GOROOT/bin"
 
 # scala support in Intellij
 export SCALA_HOME=$OPT_PREFIX/scala/idea
 
 # Apache Spark Support  start-master.sh
 # http://spark.apache.org/docs/latest/spark-standalone.html
-SPARK_HOME="$OPT_PREFIX/apache-spark/libexec"
 # export PYTHONPATH=$PYTHONPATH:$SPARK_HOME/python:$SPARK_HOME/python/build
-export PYTHONPATH=/usr/local/lib/python3.6/site-packages
+# export PYTHONPATH=/usr/local/lib/python3.6/site-packages
 # export PYTHONPATH=$PYTHONPATH:/usr/local/lib/python2.7/site-packages
 alias pip3="export PYTHONPATH=/usr/local/lib/python3.6/site-packages;pip3"
-alias pypath3="export PYTHONPATH=/usr/local/lib/python2.7/site-packages"
+alias pypath3="export PYTHONPATH=/usr/local/lib/python3.6/site-packages"
 alias pypath2="export PYTHONPATH=/usr/local/lib/python2.7/site-packages"
-export PYSPARK_DRIVER_PYTHON=python
-export PATH=$PATH:$SPARK_HOME
-export PATH=$PATH:$OPT_PREFIX/apache-spark/bin
-export PATH=$PATH:$OPT_PREFIX/apache-spark/libexec/sbin
+
+JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_144.jdk/Contents/Home/jre
+SPARK_HOME="$OPT_PREFIX/apache-spark/libexec"
+export PYSPARK_DRIVER_PYTHON=python3
+# export PYSPARK_DRIVER_PYTHON_OPTS=notebook
+export PATH="$PATH:$SPARK_HOME"
+export PATH="$PATH:$OPT_PREFIX/apache-spark/libexec/sbin"
 
 ## Jupyter Notebook Support
 # export PYTHONPATH=$SPARK_HOME/python/lib/py4j-0.10.4-src.zip:$PYTHONPATH
-# export PYSPARK_DRIVER_PYTHON_OPTS=notebook
 
 # Mysql Support
 # alias mysql=/usr/local/mysql/bin/mysql
 # alias mysqladmin=/usr/local/mysql/bin/mysqladmin
 
-# Tensorflow support
-# Mac OS X, CPU only, Python 3.4 or 3.5:
-# export TF_BINARY_URL=https://storage.googleapis.com/tensorflow/mac/cpu/tensorflow-0.12.1-py3-none-any.whl
-
-# Mac OS X, GPU enabled, Python 3.4 or 3.5:
+# Tensorflow support on Mac OS X
+# export TF_BINARY_URL=
+# https://storage.googleapis.com/tensorflow/mac/cpu/tensorflow-1.3.0-py2-none-any.whl
 # export TF_BINARY_URL=https://storage.googleapis.com/tensorflow/mac/gpu/tensorflow_gpu-0.12.1-py3-none-any.whl
+# https://pypi.python.org/packages/4f/8e/8f036b718c97b7a2a96f4e23fbaa55771686efaa97a56579df8d6826f7c5/tensorflow-1.3.0-cp36-cp36m-macosx_10_11_x86_64.whl
+ 
+TMPDIR=~/.tmp/openmpi
+BOOST_ROOT="/usr/local/opt/boost"
+OpenMP_C_FLAGS=$CFLAGS
+OpenMP_C_LIB_NAMES=
+GNUTLS_CFLAGS=$CFLAGS
 
 ## Kubenate Support
-source $(brew --prefix)/etc/bash_completion
+# source $(brew --prefix)/etc/bash_completion
 # source <(kubectl completion bash)
-[ -f /usr/local/etc/bash_completion ] && . /usr/local/etc/bash_completion
+# [ -f /usr/local/etc/bash_completion ] && . /usr/local/etc/bash_completion
 
 #  ---------------------------------------------------------------------------
 #
@@ -370,19 +403,14 @@ source $(brew --prefix)/etc/bash_completion
     #https://github.com/jimeh/git-aware-prompt
     # export GITAWAREPROMPT=~/.bash/git-aware-prompt
     # source "${GITAWAREPROMPT}/main.sh"
-    export PS1="________________________________________________________________________________\n \[\e[0;31m\]\w\[\e[0m\] @ \[\e[1;35m\]\h\[\e[0m\] (\[\e[0;34m\]\u\[\e[0m\]) \[$txtcyn\]\$git_branch\[$txtred\]\$git_dirty\[\e[0m\] \n|=> "
+    export PS1="________________________________________________________________________________\n \[\e[1;13m\]\w\[\e[0m\] @ \[\e[1;35m\]\h\[\e[0m\] (\[\e[1;92m\]\u\[\e[0m\]) \[$txtcyn\]\$git_branch\[$txtred\]\$git_dirty\[\e[0m\] \n|=> "
     export PS2="| => "
-    export SUDO_PS1="________________________________________________________________________________\n \[\e[0;31m\]\w\[\e[0m\] @ \[\e[1;35m\]\h\[\e[0m\] (\[\e[0;34m\]\u\[\e[0m\]) \[$txtcyn\]\$git_branch\[$txtred\]\$git_dirty\[\e[0m\] \n|=> "
+    export SUDO_PS1="________________________________________________________________________________\n \[\e[1;13m\]\w\[\e[0m\] @ \[\e[1;35m\]\h\[\e[0m\] (\[\e[1;92m\]\u\[\e[0m\]) \[$txtcyn\]\$git_branch\[$txtred\]\$git_dirty\[\e[0m\] \n|=> "
     export SUDO_PS2="| => "
 
 #   Set Default Editor (change 'Nano' to the editor of your choice)
 #   ------------------------------------------------------------
-    export EDITOR="/usr/bin/vim"
-
-#   Set default blocksize for ls, df, du
-#   from this: http://hints.macworld.com/comment.php?mode=view&cid=24491
-#   ------------------------------------------------------------
-    export BLOCKSIZE=1k
+    export EDITOR="/usr/bin/nano"
 
 #   Add color to terminal
 #   (this is all commented out as I use Mac Terminal Profiles)
@@ -390,7 +418,6 @@ source $(brew --prefix)/etc/bash_completion
 #   ------------------------------------------------------------
 #   export CLICOLOR=1
 #   export LSCOLORS=ExFxBxDxCxegedabagacad
-
 
 #   -----------------------------
 #   2.  MAKE TERMINAL BETTER
@@ -401,8 +428,8 @@ source $(brew --prefix)/etc/bash_completion
 alias cp='cp -iv'                           # Preferred 'cp' implementation
 alias mv='mv -iv'                           # Preferred 'mv' implementation
 alias mkdir='mkdir -pv'                     # Preferred 'mkdir' implementation
-alias ls="ls --color=auto"					# Ensure ls will display color
-alias ll='ls -FGlAhp --color=auto'          # Preferred 'ls' implementation
+alias ls="ls $COLOR_FLAG"					# Ensure ls will display color
+alias ll='ls -FGlAhp $COLOR_FLAG'          # Preferred 'ls' implementation
 alias sofu="du -d 1 * | sort -n -k1" ## Sort file using du , accending , --max-depth means -d
 
 cd() { prevfolder=$(pwd);builtin cd "$@"; ll; } # Always list directory contents upon 'cd'
@@ -419,7 +446,6 @@ alias .4='cd ../../../../'                  # Go back 4 directory levels
 alias .5='cd ../../../../../'               # Go back 5 directory levels
 alias .6='cd ../../../../../../'            # Go back 6 directory levels
 alias edit='subl'                           # edit:         Opens any file in sublime editor
-alias f='open -a Finder ./'                 # f:            Opens current directory in MacOS Finder
 alias ~="cd ~"                              # ~:            Go Home
 alias c='clear'                             # c:            Clear terminal display
 alias which='type -all'                     # which:        Find executables
@@ -477,6 +503,7 @@ EOT
     }
 
 #   extract:  Extract most know archives with one command
+#   https://www.systutorials.com/docs/linux/man/1-lz4/
 #   ---------------------------------------------------------
     extract () {
         if [ -f $1 ] ; then
@@ -493,6 +520,9 @@ EOT
             *.zip)       unzip $1       ;;
             *.Z)         uncompress $1  ;;
             *.7z)        7z x $1        ;;
+			*.lz4)       unlz4 $1       ;;
+          	*.tar.lz4)   u4dir $1	    ;;
+			*.lzma)      tar --lzma -xvf f $1 ;;
             *)     echo "'$1' cannot be extracted via extract()" ;;
              esac
          else
@@ -702,7 +732,6 @@ umask 077
 if [ ! -f "$DU" ] ; then
     echo "Dropbox Uploader not found: $DU"
     echo "Please change the 'DU' variable according to the Dropbox Uploader location."
-    return 1
 else
     DU=$($READLINK -m "$DU")
 fi
@@ -1522,8 +1551,8 @@ fi
 }
 
 function jdcli () {
-    export DIRNAME=/usr/local/bin/
-    java -jar "$DIRNAME/jd-cli.jar" $@ 
+    export DIRNAME=/usr/local/Cellar/jd-gui/1.5.1
+    java -jar "$DIRNAME/jd-gui-1.5.1.jar" $@ 
 }
 
 ## This script helps to bootstrap speak/translate service
@@ -2370,12 +2399,82 @@ function idf () {
 	cat idf.summary
 }
 
+function instabots() {
+tee install.folders <<-'EOF'
+function mv2cellars() {
+	ls -d */ > folders.here
+    cat folders.here | awk '{print "yes|mv " $1 " /usr/local/Cellar"}' >> install.go
+}
+EOF
+	find . -type f | awk '{print "extract "$1}' > install.run
+	. install.run
+	. install.folders
+	. install.go
+	echo "Type . install.go to install in cellars"
+}
+
 function bot() {
-	brew upgrade "$@" --build-bottle
-	brew install "$@" --build-bottle 
-	brew bottle "$@"
-	brew cleanup
+	BOT_PATH=~/work/bottles/tmpbot/"$1"
+	mkdir -p $BOT_PATH;cd $BOT_PATH
+	echo $BOT_PATH > bot_path
+	brew info "$1" > message.txt
+	uname -v >> message.txt
+	brew install "$@" --build-bottle  > autobot.log
+	brew upgrade "$@" --build-bottle  >> autobot.log
+	brew bottle "$@" >> autobot.log
 	brew postinstall "$@"
+}
+
+function botok(){
+	yes|cp -rf * ~/work/bottles
+	cd ~/work/bottles
+	gitmsg
+}
+
+function brewbot() {
+	unlink /usr/local/bin/python
+	unset PYTHONPATH;unalias python;brew upgrade --build-bottle
+	ln -s /usr/local/bin/python3 /usr/local/bin/python
+}
+
+function autobots () {
+ 	brew outdated  > tobe.bot
+ 	tee tobe.run <<-'EOF'
+function bot() {
+	BOT_PATH=~/work/bottles/tmpbot/"$1"
+	mkdir -p $BOT_PATH;cd $BOT_PATH
+	echo $BOT_PATH > bot_path
+	brew info "$1" > message.txt	
+	uname -v >> message.txt
+	brew install "$@" --build-bottle  > autobot.log
+	brew upgrade "$@" --build-bottle  >> autobot.log
+	brew bottle "$@"  >> autobot.log
+	brew postinstall "$@"
+}
+function botok(){
+	yes|cp -rf * ~/work/bottles
+	cd ~/work/bottles
+	gitmsg
+}
+function gitmsg() {
+	git add *;git commit -F message.txt;git push
+}
+EOF
+     cat tobe.bot | awk '{print "bot "$1";botok"}' >> tobe.run
+     echo 'brew cleanup' >> tobe.run
+     echo '[Info]  Do you want to start auto bottles ? (yes/press enter to skip)'
+     unset option
+     read option 
+     case $option in
+	        yes)
+				echo '[Info] Running Autobot'
+				. tobe.run  &
+	        ;;
+	        *)
+				$(pwd)/tobe.run
+     			echo '[Info] execute  ". tobe.run &" to start auto bottles'
+	        ;;
+	esac
 }
 
 function brewbottles() {
@@ -2405,17 +2504,12 @@ function brewpush() {
 	esac
 }
 
-function brewbot() {
-	unlink /usr/local/bin/python
-	unset PYTHONPATH;unalias python;brew upgrade --build-bottle
-	ln -s /usr/local/bin/python3 /usr/local/bin/python
-}
 
 function gobrew() {
     if [ "$(uname -s)" == "Darwin" ]; then
         cd /usr/local/Homebrew/Library/Taps/homebrew/homebrew-core/Formula
     else
-        cd /home/linuxbrew/.linuxbrew/Homebrew/Library/Taps/homebrew/homebrew-core/Formula/
+        cd /home/linuxbrew/.linuxbrew/Library/Taps/homebrew/homebrew-core/Formula/
     fi
     git remote set-url origin https://github.com/ralic/homebrew-core.git
 }
@@ -2428,26 +2522,87 @@ function gosystem() {
     cd /Library/Preferences/SystemConfiguration
 }
 
+function findtxt() {
+	echo "[Usage] findtxt about 'keyword' recursively in current folder"
+	echo "[Info] example : findtxt '/usr/bin/env python'"
+	echo "[Alt] brew install ack ; ack '/usr/bin/env python' "
+	echo "[Output] file name , line number , text details, result in findtxt.log"
+	grep -Rnw "$@" > findtxt.raw
+	cat findtxt.raw | sed s/:/\\t/ | sed s/:/\\t/ | grep -v Binary > findtxt.log
+	cat findtxt.log
+}
+
+function cleantxt() {
+	echo "[Info]~/Library/Application Support/??? contains the catalog with plugins."
+	echo "[Info]~/Library/Preferences/??? contains the rest of the configuration settings."
+	echo "[Info]~/Library/Caches/??? contains data caches, logs, local history, etc. (large size)"
+	echo "[Info]~/Library/Logs/??? contains logs."
+	rm findtxt.*
+}
+
+function gftype() {
+	echo "[Info] This support you to grep certian filename suffix"
+	echo "[Usage] 'find . | gftype log' to find all *.log"
+	grep ".*\."$1"$"
+}
+
+function replacetxt() {
+	echo "[Usage] replacetxt  'old' 'new' 'filename'"
+	echo "[Info] example : findtxt '/usr/bin/env python'"
+    local search=$1
+    local replace=$2
+    local filename=$3
+    # Note the double quotes
+    sed -i "s/${search}/${replace}/g" $filename
+}
+
+function gitcopy() {	
+	git clone --recursive --depth=50 --branch=master "$@"
+}
+
+function gitmsg() {
+	git add *;git commit -F message.txt;git push
+}
+
+function gitarget() {
+	echo "[Usage] 'gitarget GithubTreeUrl', here the commited url is from browing github"
+	echo "[Example] gitarget https://github.com/ralic/python3.62mac/tree/5394bbc291eb816e7cb05a195ed93b394ad14daf"
+	echo $1 | sed 's/\/tree\/*/ /' | sed "s/https:\/\/github.com\///g" |sed 's/\// /' > git.wanted
+	## $1 user , $2 repo , $3 commit
+	cat git.wanted | awk '{print "git clone https://github.com/"$1"/"$2";cd "$2";git checkout "$3}' > git.take
+	. git.take
+}
+
+function gitcut() {
+	echo "[Info] Cutting off commit from history "
+	git rebase -i "$@"
+}
+
 function gitgetsubs() {
 	echo "[Info] Find all submodules directorys : cat submodules.txt"
 	## Remove head and tails , ## Remove 1st line
 	find . -name .git | sed 's/^..\(.*\).....$/\1/'  | sed '1d' > submodules.txt
-	cat submodules.txt 	| awk '{print "cat "$1"/.git/config| grep url"}' > submodules.run
+	cat submodules.txt 	| awk '{print "cat "$1"/.git/config| grep url | sed -n 1p "}' > submodules.run
 	. submodules.run |sed 's/^.//'> submodules.urls
+	cat submodules.urls | awk '{print "git submodule add "$3}'> submodules.adder
 	cat submodules.txt | awk '{print "[submodule \""$1"\"],path="$1}' > submodules.path
 	paste -d"," submodules.path submodules.urls > submodules.txt
-	tr , '\n' < submodules.txt> .gitmodules
+	tr , '\n' < submodules.txt > .gitmodules
+	. submodules.adder
 	rm submodules.*
 	cat .gitmodules
 	git submodule
 	git submodule init
 	git submodule sync --recursive
+	git add .gitmodules
 }
 
 function gitupdates() {
-	git submodules foreach git pull
+	# git submodule
+	# git submodule sync --recursive;
+	# git submodule update --recursive 
+	git submodule foreach git pull
 }
-
 
 function gitdf() {
 	echo "## This script helps you compare new commmit and previous commit in git"
@@ -2465,34 +2620,42 @@ function gitadm() {
 ## REF : https://stackoverflow.com/questions/1628088/reset-local-repository-branch-to-be-just-like-remote-repository-head
 function gitrestart() {
     git checkout master
+    echo "[Info] Creating branch in 'local/develop' from local/master ..."
     git branch develop
-    git fetch --all
+    git fetch --all --recurse-submodules
+    echo "[Info] Restoring 'local/master' from 'origin/master' ... "
     git reset --hard origin/master
+    echo "[Info]Do you want to remove 'local/develop' branch ? (yes / or  Press 'enter' to skip)"
+    read option
+	case $option in
+	        yes)
+				git branch -D develop
+	        ;;
+	        *)
+	            echo "[Info]enter "$folder" to cleanup records."
+	        ;;
+	esac
 }
 
 ## This cript helps you push all submodules using git.
 alias gitpushall="git push --recurse-submodules=on-demand"
 
-## This script helps to replace master from development
 ## REF : https://stackoverflow.com/questions/2862590/how-to-replace-master-branch-in-git-entirely-from-another-branch
+
 function gitdmaster() {
+	echo '[Info]  This script helps to replace master from development'
 	git checkout develop
 	git merge -s ours master
 	git checkout master
 	git merge develop
 }
-function svn2git() {
-    echo "hi"
-}
 
-function hg2git() {
+function myhg2git() {
     #https://git-scm.com/book/en/v2/Git-and-Other-Systems-Migrating-to-Git
-
     ## Install library
     rm authors
     rm authors.clean
     git clone https://github.com/ralic/fast-export.git
-
     ## Hg clone
     # hg_repo=example
     # hg clone $hg_repo
@@ -2518,19 +2681,88 @@ function nodebt() {
 	ar -x path/to/deb/"$@".deb
 }
 
-## This script helps to creat a tar.gz for a folder.
+## This script helps to creat a tar.xz for a folder.
 function getar() {
-    tar -zcvf "$1".tar.gz "$1"
+#    tar -zcf "$1".tar.gz "$1"
     XZ_OPT=-e9 tar cJf "$1".tar.xz "$1"
+    du -sh $1
+    du -sh $1.tar.xz
 }
 
-
-## This script helps to creat a tar.gz for a folder.
 function utar() {
-    tar -xzf "$1".tar.gz "$1"
-    tar -xzf "$1".tar.gz.xz "$1"
+    extract "$1"
 }
 
+## brew install xz , brew install lz4
+### Patching mac default compress to be .tar.xz 
+# alias compress=getar
+function xbench() {
+	echo $'[Info] This script benchmarks tar.xz,tar.xz4,tar.lz4 speed, ex. xbench "Folder name"\n'
+	echo $'[Info] lz4dir score'
+	time lz4dir $1
+	echo $'[Info] xz4dir score'
+	time xz4dir $1
+	echo $'[Info] xzdir score'
+	time getar $1
+	mkdir -p xbenchTest  >>  /dev/null
+	mv $1.tar.* ./xbenchTest  >>  /dev/null
+	cd xbenchTest >>  /dev/null
+	time ulz4dir ./$1.tar.lz4;rm -rf ./$1; 
+	time uxz4dir ./$1.tar.xz4;rm -rf ./$1 
+	echo "'.xz/$1' -> './expat'"
+	time utar ./$1.tar.xz;rm -rf ./$1 
+	cd ..  >>  /dev/null
+	rm -rf xbenchTest
+}
+
+function xz4dir() {
+	find $1 -type d -print0 | xargs -0 -I'{}' mkdir -p './.xz4/{}' 
+	find $1 -type f | xargs xz -e9k
+	find $1 -name '*.xz' -print0 | xargs -0 -I'{}'  mv  '{}' './.xz4/{}'
+	tar -cf $1.tar.xz4 .xz4/$1
+	rm -rf .xz4
+    du -sh $1
+    du -sh $1.tar.xz4
+}
+
+function uxz4dir() {
+	tar -xf $1
+	find .xz4 -type f | xargs xz -d 
+	mv .xz4/* . 
+	rm -rf .xz4
+}
+
+
+function lz4dir() {
+	find $1 -type d -print0 | xargs -0 -I'{}' mkdir -p './.lz4/{}'
+    find $1 -type f | xargs lz4 -9m
+    find $1 -name '*.lz4' -print0 | xargs -0 -I'{}' mv '{}' './.lz4/{}'
+    tar -cf $1.tar.lz4 .lz4/$1 
+    rm -rf .lz4
+    du -sh $1
+    du -sh $1.tar.lz4
+}
+
+function ulz4dir() {
+	tar -xf $1
+	find .lz4 -type f | xargs unlz4 -m --rm
+	mv .lz4/* . 
+	rm -rf .lz4
+}
+
+function rsynctype() {
+	echo '[Info] Copy only certain file extension to new directory Args :"$1" = type , "$2"= directory '
+	echo "[Question] Run the command? (yes / others for skip)"
+	read option
+        case $option in 
+             yes) 
+			rsync -rv --include '*/' --include '*.$1' --exclude '*' --prune-empty-dirs $2 rsync_type
+            ;;      
+           *) 
+			echo "[Command]rsync -rv --include '*/' --include '*.$1' --exclude '*' --prune-empty-dirs $2 rsync_type"
+            ;;
+        esac
+}
 
 ## This script helps cleaning brew cache.
 function brewcc () {
@@ -2538,6 +2770,25 @@ function brewcc () {
     rm  ~/Library/Caches/Homebrew/*
 }
 
+function getlicense() {
+tee LICENSE.h <<-'EOF'
+/**
+# Copyright 2017 Ralic Lo<ralic.lo.eng@ieee.org> . All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+*//
+EOF
+}
 
 function multijobs() { 
 tee multijobs.sh <<-'EOF'
@@ -2613,13 +2864,15 @@ function rebrew () {
 }
 
 function relinkbrew () {
-   brew list | xargs brew link --overwrite --force 
+   ## Remove --force
+   brew list | xargs brew link --overwrite  | grep Warning | grep keg-only
 }
 
 
 function brewtree () {
     brew upgrade
-    brew list | xargs brew deps --tree
+    brew list | xargs brew deps --tree > brew.tree
+    cat brew.tree
 }
 
 ## This script helps porting all python scripts to python3 .
@@ -2632,9 +2885,13 @@ function allpy3() {
 
 ## This script helps upgrading all installed python3 packages.
 function repip3() {
-	pip3 list |awk '{print "echo [Info]pip3 install --upgrade "$1";pip3 install --upgrade "$1}' > pip3.update
+	pip3 list |awk '{print "echo [Info]pip3 install --upgrade "$1";pip3 install --upgrade "$1}' > pip3.tmp
+	### some packages may gets downgraded 
+	cat pip3.tmp |  grep -vF "echo [Info]pip3 install --upgrade azure;pip3 install --upgrade azure"> pip3.update
+	rm pip3.tmp
+	echo "pip3 install --upgrade py4j jupyter bleach" >> pip3.update 
+	echo "rm -rf ~/Library/Caches/pip" >> pip3.update
 	. pip3.update
-	rm -rf ~/Library/Caches/pip
 }
 
 ## This script generates hello_1~ hello_100 into hello.txt
@@ -2685,8 +2942,7 @@ function ignu7() {
 	alias libtoolize=glibtoolize
 	alias libtool=glibtool
 	alias ar=gar
-
-	alias grep=ggrep
+	alias grep=ggrep --color=always
 	alias sed=gsed
 }
 
@@ -2717,17 +2973,12 @@ function unlikeg() {
 ## NOTE :
 ## It's ok to replace gcc c++ by gcc-7
 alias jp3="python3 /usr/local/lib/python3.6/site-packages/jupyter.py notebook"
-export PATH="$OPT_PREFIX/texinfo/bin:$PATH"
 # export PATH="/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS6.1.sdk/usr/include/:$PATH"
 export PATH="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/4.2/include:$PATH"
 ##/bin/cp /usr/local/Cellar/gettext/0.19.8.1/lib/libintl.8.dylib /usr/local/lib/libintl.8.dylib
 export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
 export MANPATH="/home/linuxbrew/.linuxbrew/share/man:$MANPATH"
 export INFOPATH="/home/linuxbrew/.linuxbrew/share/info:$INFOPATH"
-export PATH="$OPT_PREFIX/m4/bin:$PATH"
-export PATH="$OPT_PREFIX/gettext/bin:$PATH"
-export PATH="$OPT_PREFIX/bison/bin:$PATH"
-
 ## Perl5 upgrade // Run once ?
 # PERL_MM_OPT="INSTALL_BASE=$HOME/perl5" cpan local::lib
 # echo 'eval "$(perl -I$HOME/perl5/lib/perl5 -Mlocal::lib)"' >> ~/.bash_profile
@@ -2737,32 +2988,100 @@ export PATH="$OPT_PREFIX/bison/bin:$PATH"
 export PATH="$HOME/.cargo/bin:$PATH"
 export WELD_HOME="~/.weld"
 
-## OPT lib support
 ## Reset lib prioirty
-export PATH="$PATH:$OPT_PREFIX/openssl/lib"
-export PATH="$OPT_PREFIX/gpatch/bin:$PATH"
-export PATH="$OPT_PREFIX/m4/bin:$PATH"
-export PATH="$OPT_PREFIX/gettext/bin:$PATH"
-export PATH="$OPT_PREFIX/bison/bin:$PATH"
-export PATH="$OPT_PREFIX/gnu-getopt/bin:$PATH"
-export PATH="$OPT_PREFIX/icu4c/bin:$PATH"
-export PATH="$OPT_PREFIX/icu4c/sbin:$PATH"
-export PATH="$OPT_PREFIX/libarchive/bin:$PATH"
-export PATH="$OPT_PREFIX/libxml2/bin:$PATH"
-export PATH="$OPT_PREFIX/e2fsprogs/bin:$PATH"
-export PATH="$OPT_PREFIX/readline/bin:$PATH"
-export PATH="$OPT_PREFIX/sphinx-doc/bin:$PATH"
-export PATH="$OPT_PREFIX/tcl-tk/bin:$PATH"
-export PATH="$OPT_PREFIX/sqlite/bin:$PATH"
 export PATH="$PATH:/Volumes/data/WorkSpace"
 alias airport="/System/Library/PrivateFrameworks/Apple80211.framework/Resources/airport"
 alias nets="/usr/sbin/networksetup -listallhardwareports"
 export PATH="/Users/dojo/work/.npm/bin/:$PATH"
-export PATH="$OPT_PREFIX/parallel-netcdf/include:$PATH"
 
-## Customized package path
+
+## OPT lib support
+export PATH="$OPT_PREFIX/parallel-netcdf/include:$PATH"
+export PATH="$OPT_PREFIX/openssl/lib:$PATH:"
+export PATH="$OPT_PREFIX/texinfo/bin:$PATH"
+
+
+
+## Customized / Shared package path for multi-OS version
+export PATH="/Library/Frameworks/Python.framework/Versions/3.6/bin:$PATH"
+# mkdir -p /Volumes/data/python/3.6/site-packages
+# cp -rf /usr/local/lib/python3.6/site-packages /Volumes/data/WorkSpace/python/3.6/site-packages
+# rm -rf /usr/local/lib/python3.6/site-packages
+# ln -s -f /Volumes/data/WorkSpace/python/3.6/site-packages /usr/local/lib/python3.6/site-packages 
+# ln -s -f /usr/local/lib/python3.6/site-packages /Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages
+# ln -s -f /usr/local/bin/glibtoolize  /usr/local/bin/libtoolize
 alias gopy3="cd /usr/local/lib/python3.6/site-packages"
 alias gonpm="cd /usr/local/lib/node_modules"
 
 ### List of Setting
 alias mvp='mvn -version'
+
+
+### GLOBALS ###
+function macdev() {
+	CPPFLAGS="-I/usr/include/ -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include"
+	ARCHFLAGS="-isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk"
+	# LDFLAGS="-L/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib -L/usr/lib"
+	LD_LIBRARY_PATH="/Applications/Xcode.app/Contents/Developer/usr/lib/:$LD_LIBRARY_PATH"
+	PATH="/Applications/Xcode.app/Contents/Developer/usr/bin/:$PATH"
+	getflags
+}
+
+function getflags() {
+	echo "________________________________________________________________________________"
+	echo -e "COMPILERS: @FC=" $FC "@CC="$CC "@CPP=" $CPP "@CXX=" $CXX "@CXXCPP=" $CXXCPP 
+	echo -e "@ARCHFLAGS=$ARCHFLAGS \n@CFLAGS=$CFLAGS \n@FFLAGS=$FFLAGS \n@LDFLAGS=$LDFLAGS \n@CPPFLAGS=$CPPFLAGS"
+}
+
+function linkopts() {
+	NEXTLIB="$@"
+	OPT_PREFIX=$OPT_PREFIX
+	export LDFLAGS="-L$OPT_PREFIX/$NEXTLIB/lib $LDFLAGS"
+	export CPPFLAGS="-I$OPT_PREFIX/$NEXTLIB/include $CPPFLAGS"
+	export PATH="$OPT_PREFIX/$NEXTLIB/include:$PATH"
+	# getflags
+}
+
+
+# LDFLAGS="-L/usr/local/lib -L$(brew --prefix e2fsprogs)/lib $LDFLAGS"
+
+function keylibs() {
+	linkopts gmp
+	linkopts bzip2
+	linkopts mpfr
+	linkopts llvm
+	linkopts ncurses
+	linkopts boost
+	linkopts boost-mpi
+	linkopts boost-python
+	linkopts binutils
+	linkopts open-mpi
+	linkopts lapack
+	linkopts readline
+	linkopts sqlite
+	linkopts openssl@1.1
+	linkopts openblas
+	linkopts zlib
+	linkopts gettext
+	linkopts bison
+	linkopts grt
+	linkopts tbb
+	linkopts suite-sparse
+	linkopts valgrind
+	linkopts opencl
+	linkopts libkml
+	export PATH="$PATH:/bin:/sbin"
+	export LINKFLAGS="$CPPFLAGS"
+	getflags
+}
+
+function morelibs(){
+	linkopts portable-expat
+	linkopts portaudio
+	linkopts libarchive
+	linkopts qt
+	linkopts metis
+	linkopts opencv
+	linkopts cython
+}
+keylibs
