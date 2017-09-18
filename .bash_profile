@@ -88,10 +88,12 @@ if [ "$(uname -s)" == "Linux" ]; then
     ## Linuxbrew Support
     #export MASTERUSER= $(whoami)
      # sudo mkdir -p /home/linuxbrew
+     # sudo ln -s -f /home/linuxbrew/.linuxbrew/usr /usr/local/.linuxbrew
      # sudo ln -s -f /home/linuxbrew/.linuxbrew/Cellar  /usr/local/Cellar ##  -f : force
      # sudo ln -s -f /home/linuxbrew/.linuxbrew/Homebrew  /usr/local/Homebrew ##  -f : force
      # sudo ln -s -f /home/linuxbrew/.linuxbrew/Homebrew/Library  /usr/local/Library ##  -f : force
      # sudo ln -s -f /home/linuxbrew/.linuxbrew/opt  /usr/local/opt ## -f : force
+     # sudo ln -s  /home/linuxbrew/.linuxbrew/include  /usr/local/include ## -f : force
     # sudo find /usr/local -maxdepth 1 -type l | awk '{print "sudo chown -R $MASTERUSER "$1}' > chown.run;. chown.run
     # f:            Opens current directory in Linux Finder
      alias f='xdg-open ./'
@@ -2561,7 +2563,7 @@ function gitcut() {
 function gitgetsubs() {
 	echo "[Info] Find all submodules directorys : cat submodules.txt"
 	## Remove head and tails , ## Remove 1st line
-	find . -name .git | sed 's/^..\(.*\).....$/\1/'  | sed '1d' > submodules.txt
+	find . -name .git | grep -v '\./.git' | sed 's/^..\(.*\).....$/\1/'  > submodules.txt
 	cat submodules.txt 	| awk '{print "cat "$1"/.git/config| grep url | sed -n 1p "}' > submodules.run
 	. submodules.run |sed 's/^.//'> submodules.urls
 	cat submodules.urls | awk '{print "git submodule add "$3}'> submodules.adder
@@ -3033,12 +3035,19 @@ function linkopts() {
 }
 
 
+##  Note . 2017.09.18
+##  In brewed libs, i686 .
+##  "readline"  is placed in readline folder, so it can't be loaded this way.
+##  1. Copy /usr/local/opt/readline/include/readline to /usr/local/include
+##  2. ln -s /usr/local/opt/readline/include/readline /usr/local/include/readline
+##  "bzip2" may have some bug, so do not link it.
+
 # LDFLAGS="-L/usr/local/lib -L$(brew --prefix e2fsprogs)/lib $LDFLAGS"
 declare -a liblist=(
-    "openssl" "xz" "zlib" "bison" #bzip2" 
+    "openssl" "xz" "zlib" "bison" #"bzip2" 
     "gmp" "mpfr" "llvm" "ncurses"
     "boost" "boost-mpi" "boost-python" "open-mpi" "tbb"
-    "readline" "gettext"
+    "gettext"  #"readline"
     "lapack" "openblas"
     "libkml" "libtool" "libunistring" "libiconv"
     "binutils" "sqlite"
@@ -3070,7 +3079,10 @@ function bootlibs {
 
 
 function keylibs() {
-	export PATH="$PATH:/bin:/sbin"
+	export LDFALGS="-L$BREW_PREFIX/lib $LDFLAGS"
+	export CPPFLAGS="-I$BREW_PREFIX/include $CPPFLAGS"
+	export LDFLAGS="-L$OPT_PREFIX/readline/lib $LDFLAGS"
+	export CPPFLAGS="-I$OPT_PREFIX/readline/include/readline $CPPFLAGS"
 	export LINKFLAGS="$CPPFLAGS"
 }
 
@@ -3085,8 +3097,7 @@ function morelibs(){
 }
 keylibs
 printlibs > /dev/null
-# bootlibs >/dev/null
-
+bootlibs >/dev/null
 
 #   Set Global Paths
 #   ------------------------------------------------------------
@@ -3095,6 +3106,6 @@ export PATH="$PATH:/bin:/sbin:/usr/include:/usr/lib"
 #   ------------------------------------------------------------
 export PATH="/usr/local/bin:/usr/local:/usr/local/sbin:/usr/local/include:/usr/local/lib:$PATH"
 #   Set Brew Paths, ensure local path will be ahead of local path
-export PATH="$BREW_PREFIX/bin;$BREW_PREFIX/sbin:$PATH"
+export PATH="$BREW_PREFIX/bin;$BREW_PREFIX/sbin:$BREW_PREFIX/lib;$BREW_PREFIX/include;$PATH"
 export MANPATH="$BREW_PREFIX:/share/man:$MANPATH"
 export INFOPATH="$BREW_PREFIX/share/info:$INFOPATH"
