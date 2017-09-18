@@ -31,47 +31,45 @@
 # CPP         C preprocessor ## gcc -E
 # CXXCPP      C++ preprocessor
 
-## DEFAULTS ##
-# FC="gfortran"
-# CXX="gcc" 
-# CPP="gcc -E" ## or g++ -E or gcc -E
-# CXXCPP=" gcc -E" 
-# CC="gcc"
-# HOMEBREW_CC="gcc"
-# HOMEBREW_CXX="gcc -E"
 
-
-# ## GCC ##
-# FC="gfortran-7"
-# CXX="gcc-7" 
-# CPP="gcc-7 -E" ## or g++ -E or gcc -E
-# CXXCPP=" gcc-7 -E" 
-# CC="gcc-7"
-# HOMEBREW_CC="gcc-7"
-# HOMEBREW_CXX="gcc-7 -E"
-
-## CLANG ##
-# CC="cc"
-# CXX="cc" 
-# CPP="gcc -E"
-# CXXCPP="gcc -E"
- 
-# ## MPI version ##
-FC="mpiftran"
-CC="mpicc"  ## change gcc to cc // 2017-06-08 ## change cc to mpicc //2017-09-07
-CXX="mpicxx" 
-CPP="mpicc -E"  ## change gcc to cc // 2017-06-08 ## change cc to mpicc //2017-09-07
-CXXCPP="clang -E"  ## Note 2017.9.12 -- Using g++7 ok, not ok using clang-5 or mpicpp"
-HOMEBREW_CC="mpicc"
-HOMEBREW_CXX="mpicxx"
-MPIFC="mpifort"
-MPICC="mpicc"  
-MPICPP="mpicc -E" 
-MPICXX="mpicxx"
-
+function setcc() {
+    echo "[Info] setcc ,Function to change compiler settings. CC_SET="$CC_SET
+## TODO --
 # --with-cxxflags='-mmic ' \
 # --with-cflags='-mmic '
-#-m32 ## Unknown -flto-compression-level  ## LTOFLAS Controls 
+# --flto-compression-level  ## LTOFLAS Controls 
+    case $CC_SET in
+        "gcc") ## GCC ##
+            FC="gfortran-7";CXX="gcc-7" ;CPP="gcc-7 -E";CXXCPP=" gcc-7 -E" ;CC="gcc-7"
+            HOMEBREW_CC="gcc-7";HOMEBREW_CXX="gcc-7 -E"
+        ;;
+        "clang")  ## CLANG ##
+            FC="gfortran";CC="cc";CXX="cc" ;CPP="gcc -E";CXXCPP="gcc -E"
+            HOMEBREW_CC="cc" ; HOMEBREW_CXX="cc -E"
+        ;;
+        "mpicc") ## MPICC ##
+        ## MPI version ##
+        FC="mpiftran"; CC="mpicc"; CXX="mpicxx" ; CPP="mpicc -E"  ;CXXCPP="clang -E"  
+        HOMEBREW_CC="mpicc";HOMEBREW_CXX="mpicxx"
+        MPIFC="mpifort";MPICC="mpicc";MPICPP="mpicc -E" ;MPICXX="mpicxx"
+        ;;
+        *) ## DEFAULTS ##
+            FC="gfortran"; CXX="gcc" ; CPP="gcc -E" ; CXXCPP=" gcc -E" ; CC="gcc"
+            HOMEBREW_CC="gcc" ; HOMEBREW_CXX="gcc -E"
+        ;;    
+    esac
+    # FLAGS_SET=$1
+    ## change gcc to cc // 2017-06-08 ## change cc to mpicc //2017-09-07
+## Note for CXXCPP: 2017.9.12 -- Using g++7 ok, not ok using clang-5 or mpicpp"
+## Other options : g++ -E or gcc -E
+}
+CC_SET="gcc"
+setcc
+
+## Set Default Editor , Priority : Sublime -> Nano -> Vim
+## Supported brew edit, git commit
+export TEXT_Editor=/usr/bin/subl || /usr/bin/nano || /usr/bin/vis
+export EDITOR=/usr/bin/subl || /usr/bin/nano || /usr/bin/vis
 
 MAKEJOBS="-j8"
 alias cgrep="grep --color=always"
@@ -96,7 +94,7 @@ if [ "$(uname -s)" == "Linux" ]; then
 	export INFOPATH="/home/linuxbrew/.linuxbrew/share/info:$INFOPATH"
 	JAVA_HOME="$OPT_PREFIX/jdk"
 	system_VER=64
-	#LTOFLAGS="-flto" # -m64
+	#LTOFLAGS="-flto" # -m64 
 	alias make="make $MAKEJOBS"
 	COLOR_FLAG="--color=auto"
 
@@ -107,9 +105,7 @@ if [ "$(uname -s)" == "Linux" ]; then
     # sudo apt-get update ; sudo apt-get install sublime-text
     alias sll=subl
     export BREW_PREFIX="/home/linuxbrew/.linuxbrew"
-	export PKG_CONFIG_PATH="$BREW_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
 fi
-# -arch x86-64 -arch i386  -Xarch_x86_64
 
 ### For MacOS/Darwin
 if [ "$(uname -s)" == "Darwin" ]; then
@@ -149,18 +145,20 @@ if [ "$(uname -s)" == "Darwin" ]; then
 	# alias xargs=gxargs ## Using GNU's xargs to enable -i feature.
 	# ln -s /usr/local/bin/python3 /usr/local/bin/python
     alias make="gmake $MAKEJOBS"
+    ## Be sure to create a /usr/bin/subl to link to sll.
     function sll() {
     	'/Applications/Sublime Text.app/Contents/MacOS/Sublime Text' $@  >& /dev/null
     }
 
     BREW_PREFIX="/usr/local"
 fi
-	
+export PKG_CONFIG_PATH="$BREW_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
 export PATH="$BREW_PREFIX/bin:$PATH"
 export PATH="$BREW_PREFIX/sbin:$PATH"
 export PATH="$BREW_PREFIX/lib:$PATH"
 export PATH="$BREW_PREFIX/include:$PATH"
 export OPT_PREFIX="$BREW_PREFIX/opt"
+
 ## Universal workspace for two or more versions of macOS development
 alias apps='cd /Volumes/data/Applications'
 alias linkapps='ln -s /Volumes/data/Applications $(pwd)/apps'   
@@ -173,11 +171,11 @@ alias bp3='python3 setup.py bdist > dist.log;python3 setup.py install'
 # MPIFLAG=" -lelan lmpi"
 # http://www.netlib.org/benchmark/hpl/results.html
 
-
 MachineFLAGS="-mmmx  -msse -maes -march=native $LTOFLAGS" # -lpthread
 MATHFLAGS="-ffast-math -Ofast -fno-signed-zeros -ffp-contract=fast $MachineFLAGS " #-mfpmath=sse+387 
 
-#-ffast-math
+
+### DEFAULT FLAGS SUPPORT
 ##http://www.netlib.org/benchmark/hpl/results.html
 CFLAGS="-fomit-frame-pointer -funroll-loops  $MATHFLAGS "
 CXXFLAGS="$MATHFLAGS "
@@ -187,12 +185,15 @@ FFLAGS="$CFLAGS  $MATHFLAGS "
 # DEBUGFLAG="-g"
 alias cpx="cc -c $LDFLAGS $DEBUGFLAG $CFLAGS -Ofast -flto"
 
+### CMAKE FLAGS SUPPORT
 CMAKE_CXX_FLAGS="-Wall -Ofast $MATHFLAGS" 
 CMAKE_CFLAGS="-Wall -Ofast $CFLAGS $MATHFLAGS" 
 CMAKE_C_FLAGS="-Wall -Ofast  $MATHFLAGS" 
 CMAKE_CXX_FLAGS_DEBUG="-Wall -Ofast $MATHFLAGS"
 PROJ_LIB="~/work/proj"
+
 export ARCHFLAGS="-march=native"
+# -arch x86-64 -arch i386  -Xarch_x86_64
 
 case $system_VER in
     32)
@@ -275,9 +276,9 @@ export PATH="$OPT_PREFIX/gcc/lib/gcc/7:$PATH"
 
 
 ## Python include/lib support
-PYVM_VER=python3.6dm ## python3.6dm for debug
-CPPFLAGS="-I/usr/local/opt/python3/include/$PYVM_VER $CPPFLAGS" 
-LDFLAGS="-L/usr/local/opt/python3/lib $LDFLAGS"
+PYVM_VER=python3.6m ## python3.6dm for debug
+#CPPFLAGS="-I/usr/local/opt/python3/include/$PYVM_VER $CPPFLAGS" 
+#LDFLAGS="-L/usr/local/opt/python3/lib $LDFLAGS"
 
 ## GNU GCC setup for OSX
 ## GNU GCC/ BINUTILS SUPPORT
@@ -408,9 +409,6 @@ GNUTLS_CFLAGS=$CFLAGS
     export SUDO_PS1="________________________________________________________________________________\n \[\e[1;13m\]\w\[\e[0m\] @ \[\e[1;35m\]\h\[\e[0m\] (\[\e[1;92m\]\u\[\e[0m\]) \[$txtcyn\]\$git_branch\[$txtred\]\$git_dirty\[\e[0m\] \n|=> "
     export SUDO_PS2="| => "
 
-#   Set Default Editor (change 'Nano' to the editor of your choice)
-#   ------------------------------------------------------------
-    export EDITOR="/usr/bin/nano"
 
 #   Add color to terminal
 #   (this is all commented out as I use Mac Terminal Profiles)
@@ -1007,40 +1005,30 @@ function tenx() {
 }
 
 ### HADOOP SERVER COMMANDS###
-
 export HADOOP_HOME="$OPT_PREFIX/hadoop"
 export HADOOP_SBIN="$OPT_PREFIX/hadoop/sbin"
 export HADOOP_CONFIG="$OPT_PREFIX/hadoop/libexec/etc/hadoop"
-export TEXT_Editor=sl || vi ## default edit is sublime or vi
 
 function hstart() { 
-$HADOOP_SBIN/start-dfs.sh;
-$HADOOP_SBIN/start-yarn.sh
+    echo "[Info] hstart, Function to start hadoop server in brew"
+    $HADOOP_SBIN/start-dfs.sh;$HADOOP_SBIN/start-yarn.sh
 }
 function hstop() {
-$HADOOP_SBIN/stop-yarn.sh;
-$HADOOP_SBIN/stop-dfs.sh
+    echo "[Info] hstop, Function to stop hadoop server in brew"
+    $HADOOP_SBIN/stop-yarn.sh; $HADOOP_SBIN/stop-dfs.sh
 }
 
 function hcl() {
-ls -l $HADOOP_CONFIG | grep xml
- echo "Showing hadoop config list"
- echo "Hadoop Config Folder : "+HADOOP_CONFIG
+    echo "[Info] hcl, Function to show hadoop config list in brew"
+    ls -l $HADOOP_CONFIG | grep xml
+     echo "Hadoop Config Folder : "+HADOOP_CONFIG
 }
 
-##
-# Your previous /Users/raliclo/.bash_profile file was backed up as /Users/raliclo/.bash_profile.macports-saved_2015-12-27_at_09:11:08
-##
-
-# MacPorts Installer addition on 2015-12-27_at_09:11:08: adding an appropriate PATH variable for use with MacPorts.
-export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
 # Finished adapting your PATH environment variable for use with MacPorts.
+export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
 
-
-##
-## Show the cpu's strength
-##
 function ccpu () {
+    echo "[Info] ccpu, Function to show the gpu's strength"
 	if [ "$(uname -s)" == "Linux" ]; then
 	        /bin/cat /proc/cpuinfo &&
 	        lscpu
@@ -1055,10 +1043,8 @@ function ccpu () {
 	fi
 }
 
-##
-## Show the gpu's strength
-##
 function cgpu () {
+    echo "[Info] cgpu, Function to show the gpu's strength"
 	if [ "$(uname -s)" == "Linux" ]; then
 	        lspci  -v -s  $(lspci | grep VGA | cut -d" " -f 1) 
 	fi
@@ -1069,27 +1055,25 @@ function cgpu () {
 	fi
 }
 
-## For macOS: Show the running EFI version to be 64 bit or 32bit 
-
 function cefi() {
+    echo "[Info][MacOS] cefi, Show the running EFI version to be 64 bit or 32bit"
 	ioreg -l -p IODeviceTree | grep firmware-abi
 }
 
-## Function to close port 8080
 function kweb () {
+    echo "[Info] kweb, Function to close port 8080"
 	arg1 = $(sudo lsof -t -i:8080)
     sudo kill $arg1 && echo "Killed processs on" $1
 }
 
-
-## Function to find rows and columns of a file
 function rcf () {
+    echo "[Info] rcf, Function to find rows and columns of a file, delimitor is a space ' '' "
 	echo File name: $1
 	awk '{ print "Rows : "NR"\nColumns : "NF }' $1
 }
 
-## Function that transverse a file.
 function tsfile () {
+    echo "[Info] tsfile, Function that transverse a file."
 	awk '
 	{
 	    for (i = 1; i <= NF; i++) {
@@ -1107,8 +1091,8 @@ function tsfile () {
 	}' $1
 }
 
-# Function that Generate a random Integer array
 function arrys () {
+     echo "[Info] arrys, Function that Generate a random Integer array"
 	num_rows=$1
 	num_columns=$2
 
@@ -1117,16 +1101,13 @@ function arrys () {
 	        matrix[$i,$j]=$RANDOM
 	    done
 	done
-
 	f1="%$((${#num_rows}+1))s"
 	f2=" %9s"
-
 	printf "$f1" ''
 	for ((i=1;i<=num_rows;i++)) do
 	    printf "$f2" $i
 	done
 	echo
-
 	for ((j=1;j<=num_columns;j++)) do
 	    printf "$f1" $j
 	    for ((i=1;i<=num_rows;i++)) do
@@ -1136,11 +1117,8 @@ function arrys () {
 	done
 }
 
-##
-# Function that create swap for linux based system
-##
-
 function createswap () {
+    echo "[Info][Linux] creatswap, Function that create swap for linux based system"
 	sudo mkdir -p /var/cache/swap/
 	sudo dd if=/dev/zero of=/var/cache/swap/swap0 bs=1M count=1000
 	sudo chmod 0600 /var/cache/swap/swap0
@@ -2563,6 +2541,9 @@ function gitcopy() {
 function gitmsg() {
 	git add *;git commit -F message.txt;git push
 }
+function gitsend() {
+	git commit -F .git/COMMIT_EDITMSG;git push
+}
 
 function gitarget() {
 	echo "[Usage] 'gitarget GithubTreeUrl', here the commited url is from browing github"
@@ -3016,7 +2997,6 @@ alias gonpm="cd /usr/local/lib/node_modules"
 ### List of Setting
 alias mvp='mvn -version'
 
-
 ### GLOBALS ###
 function macdev() {
 	CPPFLAGS="-I/usr/include/ -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include"
@@ -3044,35 +3024,46 @@ function linkopts() {
 
 
 # LDFLAGS="-L/usr/local/lib -L$(brew --prefix e2fsprogs)/lib $LDFLAGS"
+declare -a liblist=(
+    "openssl" "xz" "bzip2" "zlib" "bison" 
+    "gmp" "mpfr" "llvm" "ncurses"
+    "boost" "boost-mpi" "boost-python" "open-mpi" "tbb"
+    "readline" "gettext"
+    "lapack" "openblas"
+    "libkml" "libtool" "libunistring" "libiconv"
+    "binutils" "sqlite"
+    "opencl" "grt"
+    "suite-sparse" "valgrind"
+    )
+
+function printlibs {
+    mkdir -p ~/.cache > /dev/null
+    Nliblist=${#liblist[@]}
+    echo "Total libs  = " $Nliblist
+    echo "" > ~/.cache/brewlibs.db 
+    echo "" > ~/.cache/brewlibs.links
+    for (( ii=1; ii<${Nliblist}+1; ii++ ));
+    do
+    echo $ii" "${Nliblist}" "${liblist[$ii-1]} >> ~/.cache/brewlibs.db
+    echo linkopts ${liblist[$ii-1]} >> ~/.cache/brewlibs.links
+    done
+    which linkopts >> ~/.cache/brewlibs.links
+    echo "~/.cache/brewlibs.db:"
+    cat ~/.cache/brewlibs.db
+    echo "~/.cache/brewlibs.links:"
+    cat ~/.cache/brewlibs.links
+}   
+
+function bootlibs {
+    . ~/.cache/brewlibs.links
+    getflags
+}
+
 
 function keylibs() {
-	linkopts gmp
-	linkopts bzip2
-	linkopts mpfr
-	linkopts llvm
-	linkopts ncurses
-	linkopts boost
-	linkopts boost-mpi
-	linkopts boost-python
-	linkopts binutils
-	linkopts open-mpi
-	linkopts lapack
-	linkopts readline
-	linkopts sqlite
-	linkopts openssl@1.1
-	linkopts openblas
-	linkopts zlib
-	linkopts gettext
-	linkopts bison
-	linkopts grt
-	linkopts tbb
-	linkopts suite-sparse
-	linkopts valgrind
-	linkopts opencl
-	linkopts libkml
 	export PATH="$PATH:/bin:/sbin"
 	export LINKFLAGS="$CPPFLAGS"
-	getflags
+    brew --env
 }
 
 function morelibs(){
@@ -3085,3 +3076,5 @@ function morelibs(){
 	linkopts cython
 }
 keylibs
+printlibs > /dev/null
+bootlibs >/dev/null
