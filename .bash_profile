@@ -34,39 +34,43 @@
 ## PARALLEL PROCESSING for lz4dir/xz4dir , equals to maxcores -1
 PACORES=$(( $(grep -c ^processor /proc/cpuinfo) -1))
 PACORES=$(($PACORES * 2))
+CCSET="gcc"
 function setcc() {
-    echo "[Info] setcc ,Function to change compiler settings. CC_SET="$CC_SET
+    echo "[Info] setcc ,Function to change compiler settings. CCSET="$CCSET
 	echo "PACORES="$PACORES
 ## TODO --
 # --with-cxxflags='-mmic ' \
 # --with-cflags='-mmic '
 # --flto-compression-level  ## LTOFLAS Controls 
-    case $CC_SET in
-        "gcc") ## GCC ##
+    case $CCSET in
+        "gcc-7") ## GCC ##
             FC="gfortran-7";CXX="gcc-7" ;CPP="gcc-7 -E";CXXCPP=" gcc-7 -E" ;CC="gcc-7"
-            HOMEBREW_CC="gcc-7";HOMEBREW_CXX="gcc-7 -E"
+            export HOMEBREW_CC="gcc-7"
         ;;
         "clang")  ## CLANG ##
             FC="gfortran";CC="cc";CXX="cc" ;CPP="gcc -E";CXXCPP="gcc -E"
-            HOMEBREW_CC="cc" ; HOMEBREW_CXX="cc -E"
+            export HOMEBREW_CC="cc"
         ;;
         "mpicc") ## MPICC ##
         ## MPI version ##
-        FC="mpiftran"; CC="mpicc"; CXX="mpicxx" ; CPP="mpicc -E"  ;CXXCPP="clang -E"  
-        HOMEBREW_CC="mpicc";HOMEBREW_CXX="mpicxx"
-        MPIFC="mpifort";MPICC="mpicc";MPICPP="mpicc -E" ;MPICXX="mpicxx"
+	        FC="mpiftran"; CC="mpicc"; CXX="mpicxx" ; CPP="mpicc -E"  ;CXXCPP="clang -E"  
+	        MPIFC="mpifort";MPICC="mpicc";MPICPP="mpicc -E" ;MPICXX="mpicxx"
+	        #HOMEBREW_CC="mpicc"; HOMEBREW_CXX="mpicxx"
         ;;
-        *) ## DEFAULTS ##
+        "gcc") ## GCC7 ##
             FC="gfortran"; CXX="gcc" ; CPP="gcc -E" ; CXXCPP=" gcc -E" ; CC="gcc"
-            HOMEBREW_CC="gcc" ; HOMEBREW_CXX="gcc -E"
+            export HOMEBREW_CC="cc"
         ;;    
+        *) ## NO Setting as default ##
+
+        ;;  
     esac
+    brew --env
     # FLAGS_SET=$1
     ## change gcc to cc // 2017-06-08 ## change cc to mpicc //2017-09-07
 ## Note for CXXCPP: 2017.9.12 -- Using g++7 ok, not ok using clang-5 or mpicpp"
 ## Other options : g++ -E or gcc -E
 }
-CC_SET="gcc"
 setcc
 
 ## Set Default Editor , Priority : Sublime -> Nano -> Vim
@@ -3068,7 +3072,6 @@ function bootlibs {
 function keylibs() {
 	export PATH="$PATH:/bin:/sbin"
 	export LINKFLAGS="$CPPFLAGS"
-    brew --env
 }
 
 function morelibs(){
