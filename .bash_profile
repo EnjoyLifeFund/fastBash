@@ -33,18 +33,19 @@
 
 ## PARALLEL PROCESSING for lz4dir/xz4dir , equals to maxcores -1
 PACORES=$(( $(grep -c ^processor /proc/cpuinfo) -1))
-PACORES=$(($PACORES * 2))
-CCSET="gcc"
-function setcc() {
-    echo "[Info] setcc ,Function to change compiler settings. CCSET="$CCSET
-	echo "PACORES="$PACORES
+PACORES=$(( $PACORES * 2 ))
+
 ## TODO --
 # --with-cxxflags='-mmic ' \
 # --with-cflags='-mmic '
 # --flto-compression-level  ## LTOFLAS Controls 
+CCSET="gcc-7"
+function setcc() {
+    echo "[Info] setcc ,Function to change compiler settings. CCSET="$CCSET
+	echo "PACORES="$PACORES
     case $CCSET in
         "gcc-7") ## GCC ##
-            FC="gfortran-7";CXX="gcc-7" ;CPP="gcc-7 -E";CXXCPP=" gcc-7 -E" ;CC="gcc-7"
+            FC="gfortran-7";CC="gcc-7";CXX="gcc-7" ;CPP="gcc-7 -E";CXXCPP="gcc-7 -E"
             export HOMEBREW_CC="gcc-7"
         ;;
         "clang")  ## CLANG ##
@@ -58,7 +59,7 @@ function setcc() {
 	        #HOMEBREW_CC="mpicc"; HOMEBREW_CXX="mpicxx"
         ;;
         "gcc") ## GCC7 ##
-            FC="gfortran"; CXX="gcc" ; CPP="gcc -E" ; CXXCPP=" gcc -E" ; CC="gcc"
+            FC="gfortran";  CC="gcc" ;CXX="gcc" ; CPP="gcc -E" ; CXXCPP=" gcc -E" ;
             export HOMEBREW_CC="cc"
         ;;    
         *) ## NO Setting as default ##
@@ -3034,7 +3035,7 @@ function linkopts() {
 
 # LDFLAGS="-L/usr/local/lib -L$(brew --prefix e2fsprogs)/lib $LDFLAGS"
 declare -a liblist=(
-    "openssl" "xz" "bzip2" "zlib" "bison" 
+    "openssl" "xz" "zlib" "bison" #bzip2" 
     "gmp" "mpfr" "llvm" "ncurses"
     "boost" "boost-mpi" "boost-python" "open-mpi" "tbb"
     "readline" "gettext"
@@ -3056,7 +3057,6 @@ function printlibs {
     echo $ii" "${Nliblist}" "${liblist[$ii-1]} >> ~/.cache/brewlibs.db
     echo linkopts ${liblist[$ii-1]} >> ~/.cache/brewlibs.links
     done
-    which linkopts >> ~/.cache/brewlibs.links
     echo "~/.cache/brewlibs.db:"
     cat ~/.cache/brewlibs.db
     echo "~/.cache/brewlibs.links:"
@@ -3085,7 +3085,7 @@ function morelibs(){
 }
 keylibs
 printlibs > /dev/null
-bootlibs >/dev/null
+# bootlibs >/dev/null
 
 
 #   Set Global Paths
