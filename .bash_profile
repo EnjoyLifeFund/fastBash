@@ -31,9 +31,12 @@
 # CPP         C preprocessor ## gcc -E
 # CXXCPP      C++ preprocessor
 
-
+## PARALLEL PROCESSING for lz4dir/xz4dir , equals to maxcores -1
+PACORES=$(( $(grep -c ^processor /proc/cpuinfo) -1))
+PACORES=$(($PACORES * 2))
 function setcc() {
     echo "[Info] setcc ,Function to change compiler settings. CC_SET="$CC_SET
+	echo "PACORES="$PACORES
 ## TODO --
 # --with-cxxflags='-mmic ' \
 # --with-cflags='-mmic '
@@ -88,10 +91,6 @@ if [ "$(uname -s)" == "Linux" ]; then
     # f:            Opens current directory in Linux Finder
      alias f='xdg-open ./'
     READLINK="readlink"
-	export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
-    export PATH="/home/linuxbrew/.linuxbrew/sbin:$PATH"
-	export MANPATH="/home/linuxbrew/.linuxbrew/share/man:$MANPATH"
-	export INFOPATH="/home/linuxbrew/.linuxbrew/share/info:$INFOPATH"
 	JAVA_HOME="$OPT_PREFIX/jdk"
 	system_VER=64
 	#LTOFLAGS="-flto" # -m64 
@@ -197,7 +196,6 @@ export ARCHFLAGS="-march=native"
 
 case $system_VER in
     32)
-		## 
         export LDFLAGS="$LDFLAGS"
         export FFLAGS="$FFLAGS"
         export CFLAGS="$CFLAGS " #$ARCHFLAGS
@@ -247,10 +245,6 @@ export OPENBLAS_NUM_THREADS=32
 export LDFLAGS="-L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib $LDFLAGS"
 export CPPFLAGS="-I/usr/local/opt/llvm/include -I/usr/local/opt/llvm/include/c++/v1/ $CPPFLAGS"
 
-#   Set Local Paths
-#   ------------------------------------------------------------
-export PATH="/usr/local/bin:/usr/local:/usr/local/sbin:/usr/local/include:/usr/local/lib:$PATH"
-export PATH="/usr/local/mysql/bin:$CASSANDRA_HOME/bin:$FORREST_HOME/bin:$PATH"
 
 ## rJava Support
 #R CMD javareconf JAVA_CPPFLAGS=-I/System/Library/Frameworks/JavaVM.framework/Headers
@@ -358,6 +352,7 @@ export PATH="$PATH:$OPT_PREFIX/apache-spark/libexec/sbin"
 # Mysql Support
 # alias mysql=/usr/local/mysql/bin/mysql
 # alias mysqladmin=/usr/local/mysql/bin/mysqladmin
+export PATH="$PATH:/usr/local/mysql/bin:$CASSANDRA_HOME/bin:$FORREST_HOME/bin"
 
 # Tensorflow support on Mac OS X
 # export TF_BINARY_URL=
@@ -476,7 +471,6 @@ alias lr='ls -R | grep ":$" | sed -e '\''s/:$//'\'' -e '\''s/[^-][^\/]*\//--/g'\
 #   3.  FILE AND FOLDER MANAGEMENT
 #   -------------------------------
 
-zipf () { zip -r "$1".zip "$1" ; }          # zipf:         To create a ZIP archive of a folder
 alias numFiles='echo "Total files in directory:" $(ls -1 | wc -l)'      # numFiles:     Count of non-hidden files in current dir
 alias make1mb='mkfile 1m ./1MB.dat'         # make1mb:      Creates a file of 1mb size (all zeros)
 alias make5mb='mkfile 5m ./5MB.dat'         # make5mb:      Creates a file of 5mb size (all zeros)
@@ -2690,16 +2684,22 @@ function xbench() {
 	cd xbenchTest >>  /dev/null
 	time ulz4dir ./$1.tar.lz4;rm -rf ./$1; 
 	time uxz4dir ./$1.tar.xz4;rm -rf ./$1 
-	echo "'.xz/$1' -> './expat'"
+	echo "'.xz/$1' -> './$1'"
 	time utar ./$1.tar.xz;rm -rf ./$1 
 	cd ..  >>  /dev/null
 	rm -rf xbenchTest
 }
-
+# echo  $(($PACORES - 1))
+function zipdir() { 
+	zip -r "$1".zip "$1" > /dev/null
+	du -sh $1
+	du -sh $1.zip
+ }          
+# zipdir:         To create a ZIP archive of a folder
 function xz4dir() {
-	find $1 -type d -print0 | xargs -0 -I'{}' mkdir -p './.xz4/{}' 
-	find $1 -type f | xargs xz -e9k
-	find $1 -name '*.xz' -print0 | xargs -0 -I'{}'  mv  '{}' './.xz4/{}'
+	find $1 -type d -print0| xargs -P $PACORES -0 -I'{}' mkdir -p './.xz4/{}' 
+	find $1 -type f | ffilter | xargs -P $PACORES xz -e9k
+	find $1 -name '*.xz' -print0 | xargs -P $PACORES -0 -I'{}'  mv  '{}' './.xz4/{}'
 	tar -cf $1.tar.xz4 .xz4/$1
 	rm -rf .xz4
     du -sh $1
@@ -2708,29 +2708,34 @@ function xz4dir() {
 
 function uxz4dir() {
 	tar -xf $1
-	find .xz4 -type f | xargs xz -d 
+	find .xz4 -type f |ffilter| xargs -P $PACORES xz -d 
 	mv .xz4/* . 
 	rm -rf .xz4
 }
 
 
+## This ffilter  will take care of escaping the spaces and quotes
+## Sometimes find  if -print0 not working
+function ffilter() {
+##  | sed -e "s/'/\\\'/g" -e 's/"/\\"/g' -e 's/ /\\ /g' 
+	sed -e "s/'/\\\'/g" -e 's/"/\\"/g' -e 's/ /\\ /g' 
+}
+
 function lz4dir() {
-	find $1 -type d -print0 | xargs -0 -I'{}' mkdir -p './.lz4/{}'
-    find $1 -type f | xargs lz4 -9m
-    find $1 -name '*.lz4' -print0 | xargs -0 -I'{}' mv '{}' './.lz4/{}'
+	find $1 -type d -print0 | xargs -P $PACORES -0 -I'{}' mkdir -p './.lz4/{}'
+    find $1 -type f | ffilter | xargs -P $PACORES  lz4 -9m
+    find $1 -name '*.lz4' -print0  |  xargs -P $PACORES -0 -I'{}' mv '{}' './.lz4/{}'
     tar -cf $1.tar.lz4 .lz4/$1 
     rm -rf .lz4
     du -sh $1
     du -sh $1.tar.lz4
 }
-
 function ulz4dir() {
 	tar -xf $1
-	find .lz4 -type f | xargs unlz4 -m --rm
+	find .lz4 -type f  | ffilter |  xargs -P $PACORES unlz4 -m --rm
 	mv .lz4/* . 
 	rm -rf .lz4
 }
-
 function rsynctype() {
 	echo '[Info] Copy only certain file extension to new directory Args :"$1" = type , "$2"= directory '
 	echo "[Question] Run the command? (yes / others for skip)"
@@ -3078,3 +3083,15 @@ function morelibs(){
 keylibs
 printlibs > /dev/null
 bootlibs >/dev/null
+
+
+#   Set Global Paths
+#   ------------------------------------------------------------
+export PATH="$PATH:/bin:/sbin:/usr/include:/usr/lib"
+#   Set Local Paths, ensure local path wil lbe ahead of all other path
+#   ------------------------------------------------------------
+export PATH="/usr/local/bin:/usr/local:/usr/local/sbin:/usr/local/include:/usr/local/lib:$PATH"
+#   Set Brew Paths, ensure local path will be ahead of local path
+export PATH="$BREW_PREFIX/bin;$BREW_PREFIX/sbin:$PATH"
+export MANPATH="$BREW_PREFIX:/share/man:$MANPATH"
+export INFOPATH="$BREW_PREFIX/share/info:$INFOPATH"
