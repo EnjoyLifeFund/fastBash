@@ -41,6 +41,7 @@ export EDITOR=/usr/bin/subl || /usr/bin/nano || /usr/bin/vis
 # --with-cxxflags='-mmic ' \
 # --with-cflags='-mmic '
 # --flto-compression-level  ## LTOFLAS Controls 
+alias xxargs='xargs -n 1 -P $PACORES'
 CCSET="gcc"
 function setcc() {
 	echo "PACORES="$PACORES
@@ -514,6 +515,7 @@ EOT
     extract () {
         if [ -f $1 ] ; then
           case $1 in
+          	*.tar.lz4)   unlz4dir $1	    ;;
           	*.tar.xz)    tar xf $1      ;;
             *.tar.bz2)   tar xjf $1     ;;
             *.tar.gz)    tar xzf $1     ;;
@@ -527,7 +529,6 @@ EOT
             *.Z)         uncompress $1  ;;
             *.7z)        7z x $1        ;;
 			*.lz4)       unlz4 $1       ;;
-          	*.tar.lz4)   u4dir $1	    ;;
 			*.lzma)      tar --lzma -xvf f $1 ;;
             *)     echo "'$1' cannot be extracted via extract()" ;;
              esac
@@ -2712,8 +2713,8 @@ function xbench() {
 	mkdir -p xbenchTest  >>  /dev/null
 	mv $1.tar.* ./xbenchTest  >>  /dev/null
 	cd xbenchTest >>  /dev/null
-	time ulz4dir ./$1.tar.lz4;rm -rf ./$1; 
-	time uxz4dir ./$1.tar.xz4;rm -rf ./$1 
+	time unlz4dir ./$1.tar.lz4;rm -rf ./$1; 
+	time unxz4dir ./$1.tar.xz4;rm -rf ./$1 
 	echo "'.xz/$1' -> './$1'"
 	time utar ./$1.tar.xz;rm -rf ./$1 
 	cd ..  >>  /dev/null
@@ -2736,7 +2737,7 @@ function xz4dir() {
     du -sh $1.tar.xz4
 }
 
-function uxz4dir() {
+function unxz4dir() {
 	tar -xf $1
 	find .xz4 -type f |ffilter| xargs -n 1 -P $PACORES xz -d 
 	mv .xz4/* . 
@@ -2760,7 +2761,7 @@ function lz4dir() {
     du -sh $1
     du -sh $1.tar.lz4
 }
-function ulz4dir() {
+function unlz4dir() {
 	tar -xf $1
 	find .lz4 -type f  | ffilter |  xargs -n 1 -P $PACORES unlz4 -m --rm
 	mv .lz4/* . 
