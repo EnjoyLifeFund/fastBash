@@ -17,10 +17,9 @@
 ### ./configure notes
 #(3) When space is important, we suggest --without-readline, --disable-shared, 
 # and possibly --disable-nls and --disable-dynamic-loading.
-
 #For MacOSX, install coreutils (which includes greadlink)
-# $brew install coreutils
 
+# $brew install coreutils
 # CC          C compiler command ## gcc
 # CFLAGS      C compiler flags
 # CXX         C++ compiler command ## gcc
@@ -31,11 +30,12 @@
 # CPP         C preprocessor ## gcc -E
 # CXXCPP      C++ preprocessor
 
+## TODO -- To detect x11 to add sublime
 ## Set Default Editor , Priority : Nano -> Vim
-export TEXT_Editor=/usr/bin/nano || /usr/bin/vi
-export EDITOR=/usr/bin/nano || /usr/bin/vi
+# export TEXT_Editor=/usr/bin/nano || /usr/bin/vi
+# export EDITOR=/usr/bin/nano || /usr/bin/vi
 
-## TODO --
+## TODO 
 # --with-cxxflags='-mmic ' \
 # --with-cflags='-mmic '
 # --flto-compression-level  ## LTOFLAS Controls 
@@ -65,7 +65,6 @@ function setcc() {
             # export HOMEBREW_CC="cc"
         ;;    
         *) ## NO Setting as default ##
-
         ;;  
     esac
     brew --env
@@ -94,27 +93,20 @@ if [ "$(uname -s)" == "Linux" ]; then
      # sudo ln -s  /home/linuxbrew/.linuxbrew/include  /usr/local/include ## -f : force
     # sudo find /usr/local -maxdepth 1 -type l | awk '{print "sudo chown -R $MASTERUSER "$1}' > chown.run;. chown.run
     # f:            Opens current directory in Linux Finder
-     alias f='xdg-open ./'
+    alias f='xdg-open ./'
     READLINK="readlink"
 	JAVA_HOME="$OPT_PREFIX/jdk"
 	system_VER=64
 	#LTOFLAGS="-flto" # -m64 
 	alias make="make $MAKEJOBS"
 	COLOR_FLAG="--color=auto"
-
-    ## Sublime support for debian based linux
-    # sudo ln -s /opt/sublime/sublime_text /usr/bin/subl
-    # echo "deb https://download.sublimetext.com/ apt/stable/" | sudo tee /etc/apt/sources.list.d/sublime-text.list
-    # wget -qO - https://download.sublimetext.com/sublimehq-pub.gpg | sudo apt-key add -
-    # sudo apt-get update ; sudo apt-get install sublime-text
-    alias sll=subl
     export BREW_PREFIX="/home/linuxbrew/.linuxbrew"
 fi
 
 ### For MacOS/Darwin
 if [ "$(uname -s)" == "Darwin" ]; then
-	export TEXT_Editor=/usr/bin/subl || /usr/bin/nano || /usr/bin/vi
-    export EDITOR=/usr/bin/subl || /usr/bin/nano || /usr/bin/vi
+	export TEXT_Editor=subl || /usr/bin/nano || /usr/bin/vi
+    export EDITOR=subl || /usr/bin/nano || /usr/bin/vi
 	PACORES=$(sysctl hw | grep hw.ncpu | awk '{print $2}')
 	PACORES=$(( $PACORES * 2 ))
 	 # f:            Opens current directory in MacOS Finder
@@ -157,8 +149,7 @@ if [ "$(uname -s)" == "Darwin" ]; then
     ## Be sure to create a /usr/bin/subl to link to sll.
     function sll() {
     	'/Applications/Sublime Text.app/Contents/MacOS/Sublime Text' $@  >& /dev/null
-    }
-
+	    }
     BREW_PREFIX="/usr/local"
 fi
 
@@ -186,7 +177,6 @@ alias bp3='python3 setup.py bdist > dist.log;python3 setup.py install'
 
 MachineFLAGS="-mmmx  -msse -maes -march=native $LTOFLAGS" # -lpthread
 MATHFLAGS="-ffast-math -Ofast -fno-signed-zeros -ffp-contract=fast $MachineFLAGS " #-mfpmath=sse+387 
-
 
 ### DEFAULT FLAGS SUPPORT
 ##http://www.netlib.org/benchmark/hpl/results.html
@@ -452,10 +442,10 @@ alias .3='cd ../../../'                     # Go back 3 directory levels
 alias .4='cd ../../../../'                  # Go back 4 directory levels
 alias .5='cd ../../../../../'               # Go back 5 directory levels
 alias .6='cd ../../../../../../'            # Go back 6 directory levels
-alias edit='subl'                           # edit:         Opens any file in sublime editor
+alias edit='sll'                            # edit:         Opens any file in sublime editor
 alias ~="cd ~"                              # ~:            Go Home
 alias c='clear'                             # c:            Clear terminal display
-alias wwhich='type -all'                    # wish:        Find executables
+alias wwich='type -all'                     # wwich:        Find executables
 alias path='echo -e ${PATH//:/\\n}'         # path:         Echo all executable Paths
 alias show_options='shopt'                  # Show_options: display bash options settings
 alias fix_stty='stty sane'                  # fix_stty:     Restore terminal settings when screwed up
@@ -1040,9 +1030,7 @@ function ccpu () {
 	if [ "$(uname -s)" == "Linux" ]; then
 	        /bin/cat /proc/cpuinfo &&
 	        lscpu
-	fi
-
-	if [ "$(uname -s)" == "Darwin" ]; then
+	elif [ "$(uname -s)" == "Darwin" ]; then
 	  	   system_profiler SPHardwareDataType
 		   sysctl -n machdep.cpu.brand_string
 	       sysctl hw && 
@@ -1055,9 +1043,7 @@ function cgpu () {
     echo "[Info] cgpu, Function to show the gpu's strength"
 	if [ "$(uname -s)" == "Linux" ]; then
 	        lspci  -v -s  $(lspci | grep VGA | cut -d" " -f 1) 
-	fi
-
-	if [ "$(uname -s)" == "Darwin" ]; then
+	elif [ "$(uname -s)" == "Darwin" ]; then
 	       glxinfo > gpuinfo && cat gpuinfo
 	       echo "> cat gpuinfo < to see result"
 	fi
@@ -2433,9 +2419,9 @@ function brewbot() {
 
 function autobots () {
  	brew outdated  > tobe.bot
-    wwhich bot | sed '1d' > tobe.run
-    wwhich botok | sed '1d'>> tobe.run
-    wwhich gitmsg | sed '1d'>> tobe.run
+    wwich bot | sed '1d' > tobe.run
+    wwich botok | sed '1d'>> tobe.run
+    wwich gitmsg | sed '1d'>> tobe.run
     cat tobe.bot | awk '{print "bot "$1";botok"}' >> tobe.run
     echo 'brew cleanup' >> tobe.run
     echo '[Info]  Do you want to start auto bottles ? (yes/press enter to skip)'
@@ -3014,6 +3000,32 @@ function macdev() {
 	LD_LIBRARY_PATH="/Applications/Xcode.app/Contents/Developer/usr/lib/:$LD_LIBRARY_PATH"
 	PATH="/Applications/Xcode.app/Contents/Developer/usr/bin/:$PATH"
 	getflags
+}
+
+function sublin(){
+echo "[Info] sublin, Function to install sublime editor CLI EDITOR"
+echo "
+[Info] Sublime support for debian based linux
+sudo ln -s /opt/sublime/sublime_text /usr/bin/subl
+echo 'deb https://download.sublimetext.com/ apt/stable/' | sudo tee /etc/apt/sources.list.d/sublime-text.list
+wget -qO - https://download.sublimetext.com/sublimehq-pub.gpg | sudo apt-key add -
+sudo apt-get update ; sudo apt-get install sublime-text
+"
+if [ $(cat /usr/local/bin/subl  | wc -l) -ne 2 ] ; then 
+		if [ "$(uname -s)" == "Linux" ]; then
+				tee /usr/local/bin/subl <<-'EOF'
+			#!/bin/bash
+			/usr/bin/subl
+		EOF
+		elif [ "$(uname -s)" == "Darwin" ]; then
+					tee /usr/local/bin/subl <<-'EOF'
+			#!/bin/bash
+			'/Applications/Sublime Text.app/Contents/MacOS/Sublime Text'
+			EOF
+		fi
+fi
+chmod 500 /usr/local/bin/subl 
+echo "--- Installed /usr/local/bin/subl ----"
 }
 
 function getflags() {
