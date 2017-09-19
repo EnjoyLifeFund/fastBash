@@ -45,7 +45,7 @@
 	## Other options : g++ -E or gcc -E
 
 alias xxargs='xargs -n 1 -P $PACORES'
-CCSET="gcc"
+CCSET="mpicc"
 function setcc() {
 	echo "PACORES="$PACORES
     echo "[Info] setcc ,Function to change compiler settings. CCSET="$CCSET
@@ -2402,6 +2402,7 @@ function botok(){
 	else 
 		sed -i '1s/\(.*\)/[Failed]\1/' message.txt 
 	fi
+	brew --env >> mesage.txt
 	yes|cp -rf * ~/work/bottles
 	cd ~/work/bottles
 	gitmsg
@@ -2420,16 +2421,14 @@ function autobots () {
     wwich gitmsg | sed '1d'>> tobe.run
     cat tobe.bot | awk '{print "bot "$1";botok"}' >> tobe.run
     echo 'brew cleanup' >> tobe.run
-    echo '[Info]  Do you want to start auto bottles ? (yes/press enter to skip)'
-    unset option
+    echo '[Info]  Do you want to start auto bottles ? (yes/press enter to skip)' 
     read option 
     case $option in
-	        yes)
+	        "yes")
 				echo '[Info] Running Autobot'
 				. tobe.run  &
 	        ;;
 	        *)
-				$(pwd)/tobe.run
      			echo '[Info] execute  ". tobe.run &" to start auto bottles'
 	        ;;
 	esac
@@ -3011,12 +3010,12 @@ if [ $(cat /usr/local/bin/subl  | wc -l) -ne 2 ] ; then
 		if [ "$(uname -s)" == "Linux" ]; then
 				tee /usr/local/bin/subl <<-'EOF'
 			#!/bin/bash
-			/usr/bin/subl
+			/usr/bin/subl "$@"
 		EOF
 		elif [ "$(uname -s)" == "Darwin" ]; then
 					tee /usr/local/bin/subl <<-'EOF'
 			#!/bin/bash
-			'/Applications/Sublime Text.app/Contents/MacOS/Sublime Text'
+			'/Applications/Sublime Text.app/Contents/MacOS/Sublime Text' "$@"
 			EOF
 		fi
 fi
