@@ -163,8 +163,6 @@ function setcc() {
 ## Note for CXXCPP: 2017.9.12 -- Using g++7 ok, not ok using clang-5 or mpicpp"
 ## Other options : g++ -E or gcc -E
 }
-setcc
-
 
 export PKG_CONFIG_PATH="$BREW_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
 export PATH="$BREW_PREFIX/bin:$PATH"
@@ -2405,7 +2403,7 @@ function bot() {
 	mkdir -p $BOT_PATH;cd $BOT_PATH
 	echo $BOT_PATH > bot_path
 	brew info "$1" > message.txt
-	uname -v >> message.txt
+	uname -ov >> message.txt
 	brew install "$@" --build-bottle  > autobot.log
 	brew upgrade "$@" --build-bottle  >> autobot.log
 	brew bottle "$@" >> autobot.log
@@ -2440,7 +2438,7 @@ function bot() {
 	mkdir -p $BOT_PATH;cd $BOT_PATH
 	echo $BOT_PATH > bot_path
 	brew info "$1" > message.txt	
-	uname -v >> message.txt
+	uname -ov >> message.txt
 	brew install "$@" --build-bottle  > autobot.log
 	brew upgrade "$@" --build-bottle  >> autobot.log
 	brew bottle "$@"  >> autobot.log
@@ -3120,6 +3118,7 @@ function morelibs(){
 	linkopts opencv
 	linkopts cython
 }
+setcc
 keylibs
 printlibs > /dev/null
 bootlibs >/dev/null
