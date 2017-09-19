@@ -21,59 +21,6 @@
 #For MacOSX, install coreutils (which includes greadlink)
 # $brew install coreutils
 
-# CC          C compiler command ## gcc
-# CFLAGS      C compiler flags
-# CXX         C++ compiler command ## gcc
-# CXXFLAGS    C++ compiler flags ## gcc-E
-# CPPFLAGS    (Objective) C/C++ preprocessor flags, e.g. -I<include dir> 
-# LDFLAGS     linker flags, e.g. -L<lib dir> 
-# LIBS        libraries to pass to the linker, e.g. -l<library>
-# CPP         C preprocessor ## gcc -E
-# CXXCPP      C++ preprocessor
-
-## PARALLEL PROCESSING for lz4dir/xz4dir , equals to maxcores -1
-PACORES=$(( $(grep -c ^processor /proc/cpuinfo) -1))
-PACORES=$(( $PACORES * 2 ))
-
-## TODO --
-# --with-cxxflags='-mmic ' \
-# --with-cflags='-mmic '
-# --flto-compression-level  ## LTOFLAS Controls 
-CCSET="gcc-7"
-function setcc() {
-    echo "[Info] setcc ,Function to change compiler settings. CCSET="$CCSET
-	echo "PACORES="$PACORES
-    case $CCSET in
-        "gcc-7") ## GCC ##
-            FC="gfortran-7";CC="gcc-7";CXX="gcc-7" ;CPP="gcc-7 -E";CXXCPP="gcc-7 -E"
-            export HOMEBREW_CC="gcc-7"
-        ;;
-        "clang")  ## CLANG ##
-            FC="gfortran";CC="cc";CXX="cc" ;CPP="gcc -E";CXXCPP="gcc -E"
-            export HOMEBREW_CC="cc"
-        ;;
-        "mpicc") ## MPICC ##
-        ## MPI version ##
-	        FC="mpiftran"; CC="mpicc"; CXX="mpicxx" ; CPP="mpicc -E"  ;CXXCPP="clang -E"  
-	        MPIFC="mpifort";MPICC="mpicc";MPICPP="mpicc -E" ;MPICXX="mpicxx"
-	        #HOMEBREW_CC="mpicc"; HOMEBREW_CXX="mpicxx"
-        ;;
-        "gcc") ## GCC7 ##
-            FC="gfortran";  CC="gcc" ;CXX="gcc" ; CPP="gcc -E" ; CXXCPP=" gcc -E" ;
-            export HOMEBREW_CC="cc"
-        ;;    
-        *) ## NO Setting as default ##
-
-        ;;  
-    esac
-    brew --env
-    # FLAGS_SET=$1
-    ## change gcc to cc // 2017-06-08 ## change cc to mpicc //2017-09-07
-## Note for CXXCPP: 2017.9.12 -- Using g++7 ok, not ok using clang-5 or mpicpp"
-## Other options : g++ -E or gcc -E
-}
-setcc
-
 ## Set Default Editor , Priority : Sublime -> Nano -> Vim
 ## Supported brew edit, git commit
 export TEXT_Editor=/usr/bin/subl || /usr/bin/nano || /usr/bin/vis
@@ -85,6 +32,10 @@ alias cgrep="grep --color=always"
 # export HOMEBREW_BUILD_FROM_SOURCE=1
 ### For Linux/Debian
 if [ "$(uname -s)" == "Linux" ]; then
+
+	## PARALLEL PROCESSING for lz4dir/xz4dir 
+	PACORES=$(( $(grep -c ^processor /proc/cpuinfo) )) 
+	PACORES=$(( $PACORES * 2 ))
     ## Linuxbrew Support
     #export MASTERUSER= $(whoami)
      # sudo mkdir -p /home/linuxbrew
@@ -115,9 +66,12 @@ fi
 
 ### For MacOS/Darwin
 if [ "$(uname -s)" == "Darwin" ]; then
+	
+	PACORES=$(sysctl hw | grep hw.ncpu | awk '{print $2}')
+	PACORES=$(( $PACORES * 2 ))
 	 # f:            Opens current directory in MacOS Finder
     alias f='open -a Finder ./'                
-    # READLINK="greadlink"
+    READLINK="readlink"
 	# MACOSX_DEPLOYMENT_TARGET=$(sw_vers | grep ProductVersion | awk '{print $2}')
 	# export MACOSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET"
 	MACOSX_DEPLOYMENT_TARGET=10.8
@@ -158,6 +112,60 @@ if [ "$(uname -s)" == "Darwin" ]; then
 
     BREW_PREFIX="/usr/local"
 fi
+
+#### Completed OS related script #### 
+
+# CC          C compiler command ## gcc
+# CFLAGS      C compiler flags
+# CXX         C++ compiler command ## gcc
+# CXXFLAGS    C++ compiler flags ## gcc-E
+# CPPFLAGS    (Objective) C/C++ preprocessor flags, e.g. -I<include dir> 
+# LDFLAGS     linker flags, e.g. -L<lib dir> 
+# LIBS        libraries to pass to the linker, e.g. -l<library>
+# CPP         C preprocessor ## gcc -E
+# CXXCPP      C++ preprocessor
+
+
+## TODO --
+# --with-cxxflags='-mmic ' \
+# --with-cflags='-mmic '
+# --flto-compression-level  ## LTOFLAS Controls 
+CCSET="clang"
+function setcc() {
+	echo "PACORES="$PACORES
+    echo "[Info] setcc ,Function to change compiler settings. CCSET="$CCSET
+    case $CCSET in
+        "gcc-7") ## GCC ##
+            FC="gfortran-7";CC="gcc-7";CXX="gcc-7" ;CPP="gcc-7 -E";CXXCPP="gcc-7 -E"
+            export HOMEBREW_CC="gcc-7"
+        ;;
+        "clang")  ## CLANG ##
+            FC="gfortran";CC="cc";CXX="cc" ;CPP="gcc -E";CXXCPP="gcc -E"
+            export HOMEBREW_CC="clang"
+        ;;
+        "mpicc") ## MPICC ##
+        ## MPI version ##
+	        FC="mpiftran"; CC="mpicc"; CXX="mpicxx" ; CPP="mpicc -E"  ;CXXCPP="clang -E"  
+	        MPIFC="mpifort";MPICC="mpicc";MPICPP="mpicc -E" ;MPICXX="mpicxx"
+	        #HOMEBREW_CC="mpicc"; HOMEBREW_CXX="mpicxx"
+        ;;
+        "gcc") ## GCC7 ##
+            FC="gfortran";  CC="gcc" ;CXX="gcc" ; CPP="gcc -E" ; CXXCPP=" gcc -E" ;
+            # export HOMEBREW_CC="cc"
+        ;;    
+        *) ## NO Setting as default ##
+
+        ;;  
+    esac
+    brew --env
+    # FLAGS_SET=$1
+    ## change gcc to cc // 2017-06-08 ## change cc to mpicc //2017-09-07
+## Note for CXXCPP: 2017.9.12 -- Using g++7 ok, not ok using clang-5 or mpicpp"
+## Other options : g++ -E or gcc -E
+}
+setcc
+
+
 export PKG_CONFIG_PATH="$BREW_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
 export PATH="$BREW_PREFIX/bin:$PATH"
 export PATH="$BREW_PREFIX/sbin:$PATH"
@@ -2405,6 +2413,14 @@ function bot() {
 }
 
 function botok(){
+	s1=1
+	s2=$(cat autobot.log  | grep 'bottle do'|wc -l)
+	if [ "$s1" == "$s2" ]
+	then
+		sed -i '1s/\(.*\)/[SUCCESSED]\1/' message.txt 
+	else 
+		sed -i '1s/\(.*\)/[FAILED]\1/' message.txt 
+	fi
 	yes|cp -rf * ~/work/bottles
 	cd ~/work/bottles
 	gitmsg
@@ -2431,6 +2447,14 @@ function bot() {
 	brew postinstall "$@"
 }
 function botok(){
+	s1=1
+	s2=$(cat autobot.log  | grep 'bottle do'|wc -l)
+	if [ "$s1" == "$s2" ]
+	then
+		sed -i '1s/\(.*\)/[SUCCESSED]\1/' message.txt 
+	else 
+		sed -i '1s/\(.*\)/[FAILED]\1/' message.txt 
+	fi
 	yes|cp -rf * ~/work/bottles
 	cd ~/work/bottles
 	gitmsg
@@ -3053,6 +3077,7 @@ declare -a liblist=(
     "binutils" "sqlite"
     "opencl" "grt"
     "suite-sparse" "valgrind"
+    "python3"
     )
 
 function printlibs {
