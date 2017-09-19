@@ -39,6 +39,11 @@
 # --with-cxxflags='-mmic ' \
 # --with-cflags='-mmic '
 # --flto-compression-level  ## LTOFLAS Controls 
+    # FLAGS_SET=$1
+    ## change gcc to cc // 2017-06-08 ## change cc to mpicc //2017-09-07
+	## Note for CXXCPP: 2017.9.12 -- Using g++7 ok, not ok using clang-5 or mpicpp"
+	## Other options : g++ -E or gcc -E
+
 alias xxargs='xargs -n 1 -P $PACORES'
 CCSET="gcc"
 function setcc() {
@@ -67,11 +72,7 @@ function setcc() {
         *) ## NO Setting as default ##
         ;;  
     esac
-    brew --env
-    # FLAGS_SET=$1
-    ## change gcc to cc // 2017-06-08 ## change cc to mpicc //2017-09-07
-## Note for CXXCPP: 2017.9.12 -- Using g++7 ok, not ok using clang-5 or mpicpp"
-## Other options : g++ -E or gcc -E
+    # brew --env
 }
 MAKEJOBS="-j8"
 alias cgrep="grep --color=always"
@@ -129,7 +130,6 @@ if [ "$(uname -s)" == "Darwin" ]; then
 #   ------------------------------------------------------------
 	export BLOCKSIZE=4096
 	## IMPORTANT Check it by : diskutil info / | grep "Block Size"
-
 	## For mac -- To view du like linux 
 	# function duh () {
 	# 	du -k $1 $2 $3 $4 | awk '{if($1>1024){r=$1%1024;if(r!=0)
@@ -141,7 +141,6 @@ if [ "$(uname -s)" == "Darwin" ]; then
 	# alias find="gfind" ## [Waring Ignored] gfind: invalid argument `-1d' to `-mtime'
 	# alias time="gtime -v"
 	# alias python=python3
-
 	# alias tar=gtar
 	# alias xargs=gxargs ## Using GNU's xargs to enable -i feature.
 	# ln -s /usr/local/bin/python3 /usr/local/bin/python
@@ -154,9 +153,6 @@ if [ "$(uname -s)" == "Darwin" ]; then
 fi
 
 #### Completed OS related script #### 
-
-
-export PKG_CONFIG_PATH="$BREW_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
 export PATH="$BREW_PREFIX/bin:$PATH"
 export PATH="$BREW_PREFIX/sbin:$PATH"
 export PATH="$BREW_PREFIX/lib:$PATH"
@@ -616,7 +612,7 @@ alias showBlocked='sudo ipfw list'                  # showBlocked:  All ipfw rul
         echo -e "\n${RED}Machine stats :$NC " ; uptime
         echo -e "\n${RED}Current network location :$NC " ; scselect
         echo -e "\n${RED}Public facing IP Address :$NC " ;myip
-        #echo -e "\n${RED}DNS Configuration:$NC " ; scutil --dns
+        echo -e "\n${RED}DNS Configuration:$NC " ; scutil --dns
         echo
     }
 
@@ -2402,9 +2398,9 @@ function botok(){
 	s2=$(cat autobot.log  | grep 'bottle do'|wc -l)
 	if [ "$s1" == "$s2" ]
 	then
-		sed -i '1s/\(.*\)/[SUCCESSED]\1/' message.txt 
+		sed -i '1s/\(.*\)/[Succeed]\1/' message.txt 
 	else 
-		sed -i '1s/\(.*\)/[FAILED]\1/' message.txt 
+		sed -i '1s/\(.*\)/[Failed]\1/' message.txt 
 	fi
 	yes|cp -rf * ~/work/bottles
 	cd ~/work/bottles
@@ -3071,10 +3067,10 @@ function printlibs {
     echo "Total libs  = " $Nliblist
     echo "" > ~/.cache/brewlibs.db 
     echo "" > ~/.cache/brewlibs.links
-    for (( ii=1; ii<${Nliblist}+1; ii++ ));
+    for (( libn=1; libn <${Nliblist}+1; libn ++ ));
     do
-    echo $ii" "${Nliblist}" "${liblist[$ii-1]} >> ~/.cache/brewlibs.db
-    echo linkopts ${liblist[$ii-1]} >> ~/.cache/brewlibs.links
+    echo $libn " "${Nliblist}" "${liblist[$libn -1]} >> ~/.cache/brewlibs.db
+    echo linkopts ${liblist[$libn -1]} >> ~/.cache/brewlibs.links
     done
     echo "~/.cache/brewlibs.db:"
     cat ~/.cache/brewlibs.db
@@ -3120,3 +3116,5 @@ export PATH="/usr/local/bin:/usr/local:/usr/local/sbin:/usr/local/include:/usr/l
 export PATH="$BREW_PREFIX/bin;$BREW_PREFIX/sbin:$BREW_PREFIX/lib;$BREW_PREFIX/include;$PATH"
 export MANPATH="$BREW_PREFIX:/share/man:$MANPATH"
 export INFOPATH="$BREW_PREFIX/share/info:$INFOPATH"
+export PKG_CONFIG_PATH="$BREW_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
+
