@@ -21,11 +21,6 @@
 #For MacOSX, install coreutils (which includes greadlink)
 # $brew install coreutils
 
-## Set Default Editor , Priority : Sublime -> Nano -> Vim
-## Supported brew edit, git commit
-export TEXT_Editor=/usr/bin/subl || /usr/bin/nano || /usr/bin/vis
-export EDITOR=/usr/bin/subl || /usr/bin/nano || /usr/bin/vis
-
 # CC          C compiler command ## gcc
 # CFLAGS      C compiler flags
 # CXX         C++ compiler command ## gcc
@@ -36,6 +31,9 @@ export EDITOR=/usr/bin/subl || /usr/bin/nano || /usr/bin/vis
 # CPP         C preprocessor ## gcc -E
 # CXXCPP      C++ preprocessor
 
+## Set Default Editor , Priority : Nano -> Vim
+export TEXT_Editor=/usr/bin/nano || /usr/bin/vi
+export EDITOR=/usr/bin/nano || /usr/bin/vi
 
 ## TODO --
 # --with-cxxflags='-mmic ' \
@@ -82,7 +80,6 @@ alias cgrep="grep --color=always"
 # export HOMEBREW_BUILD_FROM_SOURCE=1
 ### For Linux/Debian
 if [ "$(uname -s)" == "Linux" ]; then
-
 	## PARALLEL PROCESSING for lz4dir/xz4dir 
 	PACORES=$(( $(grep -c ^processor /proc/cpuinfo) )) 
 	PACORES=$(( $PACORES * 2 ))
@@ -116,7 +113,8 @@ fi
 
 ### For MacOS/Darwin
 if [ "$(uname -s)" == "Darwin" ]; then
-	
+	export TEXT_Editor=/usr/bin/subl || /usr/bin/nano || /usr/bin/vi
+    export EDITOR=/usr/bin/subl || /usr/bin/nano || /usr/bin/vi
 	PACORES=$(sysctl hw | grep hw.ncpu | awk '{print $2}')
 	PACORES=$(( $PACORES * 2 ))
 	 # f:            Opens current directory in MacOS Finder
@@ -129,6 +127,7 @@ if [ "$(uname -s)" == "Darwin" ]; then
 	#LTOFLAGS="-flto " # -m32 -fopenmp  -m64 -m32 
 	# Java Support
 	JAVA_HOME=$(/usr/libexec/java_home)
+	COLOR_FLAG="--color=auto"
 	# export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-9.jdk/Contents/Home
 	# export JAVA6_HOME="/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home"
 	# export JAVA8_HOME="/Library/Java/JavaVirtualMachines/jdk1.8.0_131.jdk/Contents/Home/jre"
@@ -456,7 +455,7 @@ alias .6='cd ../../../../../../'            # Go back 6 directory levels
 alias edit='subl'                           # edit:         Opens any file in sublime editor
 alias ~="cd ~"                              # ~:            Go Home
 alias c='clear'                             # c:            Clear terminal display
-alias which='type -all'                     # which:        Find executables
+alias wwhich='type -all'                    # wish:        Find executables
 alias path='echo -e ${PATH//:/\\n}'         # path:         Echo all executable Paths
 alias show_options='shopt'                  # Show_options: display bash options settings
 alias fix_stty='stty sane'                  # fix_stty:     Restore terminal settings when screwed up
@@ -705,16 +704,16 @@ function httpDebug () { /usr/bin/curl $@ -o /dev/null -w "dns: %{time_namelookup
 
 
 ##### Dropbox_shell integration #####
-# #Looking for dropbox uploader
-# if [ -f "./dup.sh" ]; then
-#     DU="./dup.sh"
-# else
-#     DU=$(which dup.sh)
-#     if [ $? -ne 0 ]; then
-#         echo "Dropbox Uploader not found!"
-#         return 1
-#     fi
-# fi
+#Looking for dropbox uploader
+if [ -f "./dup.sh" ]; then
+    DU="./dup.sh"
+else
+    DU=$(which dup.sh)
+    if [ $? -ne 0 ]; then
+        echo "Dropbox Uploader not found!"
+        return 1
+    fi
+fi
 
 DU=/usr/local/bin/dup.sh
 
@@ -2434,41 +2433,15 @@ function brewbot() {
 
 function autobots () {
  	brew outdated  > tobe.bot
- 	tee tobe.run <<-'EOF'
-function bot() {
-	BOT_PATH=~/work/bottles/tmpbot/"$1"
-	mkdir -p $BOT_PATH;cd $BOT_PATH
-	echo $BOT_PATH > bot_path
-	brew info "$1" > message.txt	
-	uname -ov >> message.txt
-	brew install "$@" --build-bottle  > autobot.log
-	brew upgrade "$@" --build-bottle  >> autobot.log
-	brew bottle "$@"  >> autobot.log
-	brew postinstall "$@"
-}
-function botok(){
-	s1=1
-	s2=$(cat autobot.log  | grep 'bottle do'|wc -l)
-	if [ "$s1" == "$s2" ]
-	then
-		sed -i '1s/\(.*\)/[SUCCESSED]\1/' message.txt 
-	else 
-		sed -i '1s/\(.*\)/[FAILED]\1/' message.txt 
-	fi
-	yes|cp -rf * ~/work/bottles
-	cd ~/work/bottles
-	gitmsg
-}
-function gitmsg() {
-	git add *;git commit -F message.txt;git push
-}
-EOF
-     cat tobe.bot | awk '{print "bot "$1";botok"}' >> tobe.run
-     echo 'brew cleanup' >> tobe.run
-     echo '[Info]  Do you want to start auto bottles ? (yes/press enter to skip)'
-     unset option
-     read option 
-     case $option in
+    wwhich bot | sed '1d' > tobe.run
+    wwhich botok | sed '1d'>> tobe.run
+    wwhich gitmsg | sed '1d'>> tobe.run
+    cat tobe.bot | awk '{print "bot "$1";botok"}' >> tobe.run
+    echo 'brew cleanup' >> tobe.run
+    echo '[Info]  Do you want to start auto bottles ? (yes/press enter to skip)'
+    unset option
+    read option 
+    case $option in
 	        yes)
 				echo '[Info] Running Autobot'
 				. tobe.run  &
