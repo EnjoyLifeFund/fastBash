@@ -26,6 +26,55 @@
 export TEXT_Editor=/usr/bin/subl || /usr/bin/nano || /usr/bin/vis
 export EDITOR=/usr/bin/subl || /usr/bin/nano || /usr/bin/vis
 
+# CC          C compiler command ## gcc
+# CFLAGS      C compiler flags
+# CXX         C++ compiler command ## gcc
+# CXXFLAGS    C++ compiler flags ## gcc-E
+# CPPFLAGS    (Objective) C/C++ preprocessor flags, e.g. -I<include dir> 
+# LDFLAGS     linker flags, e.g. -L<lib dir> 
+# LIBS        libraries to pass to the linker, e.g. -l<library>
+# CPP         C preprocessor ## gcc -E
+# CXXCPP      C++ preprocessor
+
+
+## TODO --
+# --with-cxxflags='-mmic ' \
+# --with-cflags='-mmic '
+# --flto-compression-level  ## LTOFLAS Controls 
+CCSET="gcc"
+function setcc() {
+	echo "PACORES="$PACORES
+    echo "[Info] setcc ,Function to change compiler settings. CCSET="$CCSET
+    case $CCSET in
+        "gcc-7") ## GCC ##
+            FC="gfortran-7";CC="gcc-7";CXX="gcc-7" ;CPP="gcc-7 -E";CXXCPP="gcc-7 -E"
+            export HOMEBREW_CC="gcc-7"
+        ;;
+        "clang")  ## CLANG ##
+            FC="gfortran";CC="cc";CXX="cc" ;CPP="gcc -E";CXXCPP="gcc -E"
+            export HOMEBREW_CC="clang"
+        ;;
+        "mpicc") ## MPICC ##
+        ## MPI version ##
+	        FC="mpiftran"; CC="mpicc"; CXX="mpicxx" ; CPP="mpicc -E"  ;CXXCPP="clang -E"  
+	        MPIFC="mpifort";MPICC="mpicc";MPICPP="mpicc -E" ;MPICXX="mpicxx"
+	        #HOMEBREW_CC="mpicc"; HOMEBREW_CXX="mpicxx"
+        ;;
+        "gcc") ## GCC7 ##
+            FC="gfortran";  CC="gcc" ;CXX="gcc" ; 
+            # CPP="gcc -E" ; CXXCPP=" gcc -E" ;
+            # export HOMEBREW_CC="cc"
+        ;;    
+        *) ## NO Setting as default ##
+
+        ;;  
+    esac
+    brew --env
+    # FLAGS_SET=$1
+    ## change gcc to cc // 2017-06-08 ## change cc to mpicc //2017-09-07
+## Note for CXXCPP: 2017.9.12 -- Using g++7 ok, not ok using clang-5 or mpicpp"
+## Other options : g++ -E or gcc -E
+}
 MAKEJOBS="-j8"
 alias cgrep="grep --color=always"
 
@@ -115,54 +164,6 @@ fi
 
 #### Completed OS related script #### 
 
-# CC          C compiler command ## gcc
-# CFLAGS      C compiler flags
-# CXX         C++ compiler command ## gcc
-# CXXFLAGS    C++ compiler flags ## gcc-E
-# CPPFLAGS    (Objective) C/C++ preprocessor flags, e.g. -I<include dir> 
-# LDFLAGS     linker flags, e.g. -L<lib dir> 
-# LIBS        libraries to pass to the linker, e.g. -l<library>
-# CPP         C preprocessor ## gcc -E
-# CXXCPP      C++ preprocessor
-
-
-## TODO --
-# --with-cxxflags='-mmic ' \
-# --with-cflags='-mmic '
-# --flto-compression-level  ## LTOFLAS Controls 
-CCSET="clang"
-function setcc() {
-	echo "PACORES="$PACORES
-    echo "[Info] setcc ,Function to change compiler settings. CCSET="$CCSET
-    case $CCSET in
-        "gcc-7") ## GCC ##
-            FC="gfortran-7";CC="gcc-7";CXX="gcc-7" ;CPP="gcc-7 -E";CXXCPP="gcc-7 -E"
-            export HOMEBREW_CC="gcc-7"
-        ;;
-        "clang")  ## CLANG ##
-            FC="gfortran";CC="cc";CXX="cc" ;CPP="gcc -E";CXXCPP="gcc -E"
-            export HOMEBREW_CC="clang"
-        ;;
-        "mpicc") ## MPICC ##
-        ## MPI version ##
-	        FC="mpiftran"; CC="mpicc"; CXX="mpicxx" ; CPP="mpicc -E"  ;CXXCPP="clang -E"  
-	        MPIFC="mpifort";MPICC="mpicc";MPICPP="mpicc -E" ;MPICXX="mpicxx"
-	        #HOMEBREW_CC="mpicc"; HOMEBREW_CXX="mpicxx"
-        ;;
-        "gcc") ## GCC7 ##
-            FC="gfortran";  CC="gcc" ;CXX="gcc" ; CPP="gcc -E" ; CXXCPP=" gcc -E" ;
-            # export HOMEBREW_CC="cc"
-        ;;    
-        *) ## NO Setting as default ##
-
-        ;;  
-    esac
-    brew --env
-    # FLAGS_SET=$1
-    ## change gcc to cc // 2017-06-08 ## change cc to mpicc //2017-09-07
-## Note for CXXCPP: 2017.9.12 -- Using g++7 ok, not ok using clang-5 or mpicpp"
-## Other options : g++ -E or gcc -E
-}
 
 export PKG_CONFIG_PATH="$BREW_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
 export PATH="$BREW_PREFIX/bin:$PATH"
@@ -2726,9 +2727,9 @@ function zipdir() {
  }          
 # zipdir:         To create a ZIP archive of a folder
 function xz4dir() {
-	find $1 -type d -print0| xargs -P $PACORES -0 -I'{}' mkdir -p './.xz4/{}' 
-	find $1 -type f | ffilter | xargs -P $PACORES xz -e9k
-	find $1 -name '*.xz' -print0 | xargs -P $PACORES -0 -I'{}'  mv  '{}' './.xz4/{}'
+	find $1 -type d -print0| xargs -n 1 -P $PACORES -0 -I'{}' mkdir -p './.xz4/{}' 
+	find $1 -type f | ffilter | xargs -n 1 -P $PACORES xz -e9k
+	find $1 -name '*.xz' -print0 | xargs -n 1 -P $PACORES -0 -I'{}'  mv  '{}' './.xz4/{}'
 	tar -cf $1.tar.xz4 .xz4/$1
 	rm -rf .xz4
     du -sh $1
@@ -2737,7 +2738,7 @@ function xz4dir() {
 
 function uxz4dir() {
 	tar -xf $1
-	find .xz4 -type f |ffilter| xargs -P $PACORES xz -d 
+	find .xz4 -type f |ffilter| xargs -n 1 -P $PACORES xz -d 
 	mv .xz4/* . 
 	rm -rf .xz4
 }
@@ -2751,9 +2752,9 @@ function ffilter() {
 }
 
 function lz4dir() {
-	find $1 -type d -print0 | xargs -P $PACORES -0 -I'{}' mkdir -p './.lz4/{}'
-    find $1 -type f | ffilter | xargs -P $PACORES  lz4 -9m
-    find $1 -name '*.lz4' -print0  |  xargs -P $PACORES -0 -I'{}' mv '{}' './.lz4/{}'
+	find $1 -type d -print0 | xargs -n 1 -P $PACORES -0 -I'{}' mkdir -p './.lz4/{}'
+    find $1 -type f | ffilter | xargs -n 1 -P $PACORES  lz4 -9m
+    find $1 -name '*.lz4' -print0  |  xargs -n 1 -P $PACORES -0 -I'{}' mv '{}' './.lz4/{}'
     tar -cf $1.tar.lz4 .lz4/$1 
     rm -rf .lz4
     du -sh $1
@@ -2761,7 +2762,7 @@ function lz4dir() {
 }
 function ulz4dir() {
 	tar -xf $1
-	find .lz4 -type f  | ffilter |  xargs -P $PACORES unlz4 -m --rm
+	find .lz4 -type f  | ffilter |  xargs -n 1 -P $PACORES unlz4 -m --rm
 	mv .lz4/* . 
 	rm -rf .lz4
 }
