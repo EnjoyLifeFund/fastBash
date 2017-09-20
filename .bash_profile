@@ -39,15 +39,19 @@
 # --with-cxxflags='-mmic ' \
 # --with-cflags='-mmic '
 # --flto-compression-level  ## LTOFLAS Controls 
-    # FLAGS_SET=$1
-    ## change gcc to cc // 2017-06-08 ## change cc to mpicc //2017-09-07
-	## Note for CXXCPP: 2017.9.12 -- Using g++7 ok, not ok using clang-5 or mpicpp"
-	## Other options : g++ -E or gcc -E
+# https://gcc.gnu.org/onlinedocs/gcc-4.9.2/gcc/Optimize-Options.html
+# MPIFLAG=" -lelan lmpi"
+
+## Notes:
+## change gcc to cc // 2017-06-08 ## change cc to mpicc //2017-09-07
+## CXXCPP: 2017.9.12 -- Using g++7 ok, not ok using clang-5 or mpicpp"
+##                   -- Other options : g++ -E or gcc -E
+##                   -- It's ok to replace gcc c++ by gcc-7
 
 alias xxargs='xargs -n 1 -P $PACORES'
-CCSET="mpicc"
+CCSET="clang"
 function setcc() {
-	echo "PACORES="$PACORES
+    echo "PACORES="$PACORES
     echo "[Info] setcc ,Function to change compiler settings. CCSET="$CCSET
     case $CCSET in
         "gcc-7") ## GCC ##
@@ -60,9 +64,9 @@ function setcc() {
         ;;
         "mpicc") ## MPICC ##
         ## MPI version ##
-	        FC="mpiftran"; CC="mpicc"; CXX="mpicxx" ; CPP="mpicc -E"  ;CXXCPP="clang -E"  
-	        MPIFC="mpifort";MPICC="mpicc";MPICPP="mpicc -E" ;MPICXX="mpicxx"
-	        #HOMEBREW_CC="mpicc"; HOMEBREW_CXX="mpicxx"
+            FC="mpifort"; CC="mpicc"; CXX="mpicxx" ; CPP="mpicc -E"  ;CXXCPP="clang -E"  
+            MPIFC="mpifort";MPICC="mpicc";MPICPP="mpicc -E" ;MPICXX="mpicxx"
+            #HOMEBREW_CC="mpicc"; HOMEBREW_CXX="mpicxx"
         ;;
         "gcc") ## GCC7 ##
             FC="gfortran";  CC="gcc" ;CXX="gcc" ; 
@@ -74,15 +78,15 @@ function setcc() {
     esac
     # brew --env
 }
-MAKEJOBS="-j8"
+export MAKEJOBS="-j8"
 alias cgrep="grep --color=always"
 
 # export HOMEBREW_BUILD_FROM_SOURCE=1
 ### For Linux/Debian
 if [ "$(uname -s)" == "Linux" ]; then
-	## PARALLEL PROCESSING for lz4dir/xz4dir 
-	PACORES=$(( $(grep -c ^processor /proc/cpuinfo) )) 
-	PACORES=$(( $PACORES * 2 ))
+    ## PARALLEL PROCESSING for lz4dir/xz4dir 
+    PACORES=$(( $(grep -c ^processor /proc/cpuinfo) )) 
+    PACORES=$(( $PACORES * 2 ))
     ## Linuxbrew Support
     #export MASTERUSER= $(whoami)
      # sudo mkdir -p /home/linuxbrew
@@ -96,62 +100,56 @@ if [ "$(uname -s)" == "Linux" ]; then
     # f:            Opens current directory in Linux Finder
     alias f='xdg-open ./'
     READLINK="readlink"
-	JAVA_HOME="$OPT_PREFIX/jdk"
-	system_VER=64
-	#LTOFLAGS="-flto" # -m64 
-	alias make="make $MAKEJOBS"
-	COLOR_FLAG="--color=auto"
+    JAVA_HOME="$OPT_PREFIX/jdk"
+    system_VER=64
+    LTOFLAGS="-flto -m32" # -m64 
+    alias make="make $MAKEJOBS"
+    COLOR_FLAG="--color=auto"
     export BREW_PREFIX="/home/linuxbrew/.linuxbrew"
 fi
 
 ### For MacOS/Darwin
 if [ "$(uname -s)" == "Darwin" ]; then
-	export TEXT_Editor=subl || /usr/bin/nano || /usr/bin/vi
-    export EDITOR=subl || /usr/bin/nano || /usr/bin/vi
-	PACORES=$(sysctl hw | grep hw.ncpu | awk '{print $2}')
-	PACORES=$(( $PACORES * 2 ))
-	 # f:            Opens current directory in MacOS Finder
+    export TEXT_Editor=subl #/usr/bin/nano || /usr/bin/vi
+    export EDITOR=subl # /usr/bin/nano || /usr/bin/vi
+    # MACOSX_DEPLOYMENT_TARGET=$(sw_vers | grep ProductVersion | awk '{print $2}')
+    # export MACOSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET"
+    export MACOSX_DEPLOYMENT_TARGET=10.1
+    PACORES=$(sysctl hw | grep hw.ncpu | awk '{print $2}')
+    PACORES=$(( $PACORES * 2 ))
+     # f:            Opens current directory in MacOS Finder
     alias f='open -a Finder ./'                
     READLINK="readlink"
-	# MACOSX_DEPLOYMENT_TARGET=$(sw_vers | grep ProductVersion | awk '{print $2}')
-	# export MACOSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET"
-	MACOSX_DEPLOYMENT_TARGET=10.8
-	system_VER=64
-	#LTOFLAGS="-flto " # -m32 -fopenmp  -m64 -m32 
-	# Java Support
-	JAVA_HOME=$(/usr/libexec/java_home)
-	COLOR_FLAG="--color=auto"
-	# export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-9.jdk/Contents/Home
-	# export JAVA6_HOME="/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home"
-	# export JAVA8_HOME="/Library/Java/JavaVirtualMachines/jdk1.8.0_131.jdk/Contents/Home/jre"
-
-#   Set default blocksize for ls, df, du
-#   from this: http://hints.macworld.com/comment.php?mode=view&cid=24491
-#   ------------------------------------------------------------
-	export BLOCKSIZE=4096
-	## IMPORTANT Check it by : diskutil info / | grep "Block Size"
-	## For mac -- To view du like linux 
-	# function duh () {
-	# 	du -k $1 $2 $3 $4 | awk '{if($1>1024){r=$1%1024;if(r!=0)
-	# 	   {sz=($1-r)/1024}else{sz=$1/1024}print sz"Mt"$2;}
-	# 	   else{print $1"Kt"$2}}'
-	# } 
-	# alias du=duh
-
-	# alias find="gfind" ## [Waring Ignored] gfind: invalid argument `-1d' to `-mtime'
-	# alias time="gtime -v"
-	# alias python=python3
-	# alias tar=gtar
-	# alias xargs=gxargs ## Using GNU's xargs to enable -i feature.
-	# ln -s /usr/local/bin/python3 /usr/local/bin/python
-    alias make="gmake $MAKEJOBS"
-    ## Be sure to create a /usr/bin/subl to link to sll.
-    function sll() {
-    	'/Applications/Sublime Text.app/Contents/MacOS/Sublime Text' $@  >& /dev/null
-	    }
+    system_VER=64
+    LTOFLAGS="-flto " # -m32 -fopenmp  -m64 -m32 
+    JAVA_HOME=$(/usr/libexec/java_home)
+    COLOR_FLAG="--color=auto"
     BREW_PREFIX="/usr/local"
-fi
+    alias make="gmake $MAKEJOBS"
+    # export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-9.jdk/Contents/Home
+    # export JAVA6_HOME="/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home"
+    # export JAVA8_HOME="/Library/Java/JavaVirtualMachines/jdk1.8.0_131.jdk/Contents/Home/jre"
 
+    ## Set default blocksize for ls, df, du
+    ## IMPORTANT Check it by : diskutil info / | grep "Block Size"
+    export BLOCKSIZE=4096
+fi
+    ## For mac -- To view du like linux 
+    # function duh () {
+    #   du -k $1 $2 $3 $4 | awk '{if($1>1024){r=$1%1024;if(r!=0)
+    #      {sz=($1-r)/1024}else{sz=$1/1024}print sz"Mt"$2;}
+    #      else{print $1"Kt"$2}}'
+    # } 
+    # alias du=duh
+
+# alias find="gfind" ## [Waring Ignored] gfind: invalid argument `-1d' to `-mtime'
+# alias time="gtime -v"
+# alias tar=gtar
+# alias xargs=gxargs ## Using GNU's xargs to enable -i feature.
+# ln -s /usr/local/bin/python3 /usr/local/bin/python 
+# alias python=python3 
+
+alias sll=subl
 #### Completed OS related script #### 
 export PATH="$BREW_PREFIX/bin:$PATH"
 export PATH="$BREW_PREFIX/sbin:$PATH"
@@ -165,31 +163,27 @@ alias linkapps='ln -s /Volumes/data/Applications $(pwd)/apps'
 alias work='cd /Volumes/data/WorkSpace'
 alias linkwork='ln -s /Volumes/data/WorkSpace $(pwd)/work'
 alias bp3='python3 setup.py bdist > dist.log;python3 setup.py install'
-
-## Add this line for some python3 packages installation
-# https://gcc.gnu.org/onlinedocs/gcc-4.9.2/gcc/Optimize-Options.html
-# MPIFLAG=" -lelan lmpi"
 # http://www.netlib.org/benchmark/hpl/results.html
 
-MachineFLAGS="-mmmx  -msse -maes -march=native $LTOFLAGS" # -lpthread
-MATHFLAGS="-ffast-math -Ofast -fno-signed-zeros -ffp-contract=fast $MachineFLAGS " #-mfpmath=sse+387 
+export MachineFLAGS="-mmmx  -msse -maes -march=native $LTOFLAGS" # -lpthread
+export MATHFLAGS="-ffast-math -Ofast -fno-signed-zeros -ffp-contract=fast $MachineFLAGS " #-mfpmath=sse+387 
 
 ### DEFAULT FLAGS SUPPORT
 ##http://www.netlib.org/benchmark/hpl/results.html
-CFLAGS="-fomit-frame-pointer -funroll-loops  $MATHFLAGS "
-CXXFLAGS="$MATHFLAGS "
-FFLAGS="$CFLAGS  $MATHFLAGS "
+export CFLAGS="-fomit-frame-pointer -funroll-loops  $MATHFLAGS "
+export CXXFLAGS="$MATHFLAGS "
+export FFLAGS="$CFLAGS  $MATHFLAGS "
 
 ### set gcc debug flag, Default is not to use it.
 # DEBUGFLAG="-g"
 alias cpx="cc -c $LDFLAGS $DEBUGFLAG $CFLAGS -Ofast -flto"
 
 ### CMAKE FLAGS SUPPORT
-CMAKE_CXX_FLAGS="-Wall -Ofast $MATHFLAGS" 
-CMAKE_CFLAGS="-Wall -Ofast $CFLAGS $MATHFLAGS" 
-CMAKE_C_FLAGS="-Wall -Ofast  $MATHFLAGS" 
-CMAKE_CXX_FLAGS_DEBUG="-Wall -Ofast $MATHFLAGS"
-PROJ_LIB="~/work/proj"
+export CMAKE_CXX_FLAGS="-Wall -Ofast $MATHFLAGS" 
+export CMAKE_CFLAGS="-Wall -Ofast $CFLAGS $MATHFLAGS" 
+export CMAKE_C_FLAGS="-Wall -Ofast  $MATHFLAGS" 
+export CMAKE_CXX_FLAGS_DEBUG="-Wall -Ofast $MATHFLAGS"
+export PROJ_LIB="~/work/proj"
 
 export ARCHFLAGS="-march=native"
 # -arch x86-64 -arch i386  -Xarch_x86_64
@@ -217,24 +211,17 @@ case $system_VER in
         # export LD_LIBRARY_PATH="/usr/lib:$LD_LIBRARY_PATH"
     ;;
 esac
-### EXTRA LIB FLAGS ###
-export CC="$CC"
-export CPP="$CPP"
-export CXX="$CXX"
-export CXXCPP="$CXXCPP"
 
+## e2fslib support
+# export PATH="$(brew --prefix e2fsprogs)/lib:$PATH"
 
 ## QT Support
 ## OpenCV3 Support
-
 ## CUDA SUPPORT ##
 export PATH="/usr/local/cuda/bin:/usr/local/cuda/nvvm/bin:$PATH"
 export LDFLAGS="-L/usr/local/cuda/lib -L/usr/local/cuda/nvvm/lib $LDFLAGS"
 export CPPFLAGS="-I/usr/local/cuda/include -I/usr/local/cuda/nvvm/include $CPPFLAGS"
 
-
-## e2fslib support
-# export PATH="$(brew --prefix e2fsprogs)/lib:$PATH"
 ## graphviz support 
 ## openblas support
 ## brew install openblas
@@ -244,7 +231,6 @@ export OPENBLAS_NUM_THREADS=32
 ## brew reinstall llvm -v --all-targets --rtti --shared --with-asan --with-clang --use-clang
 export LDFLAGS="-L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib $LDFLAGS"
 export CPPFLAGS="-I/usr/local/opt/llvm/include -I/usr/local/opt/llvm/include/c++/v1/ $CPPFLAGS"
-
 
 ## rJava Support
 #R CMD javareconf JAVA_CPPFLAGS=-I/System/Library/Frameworks/JavaVM.framework/Headers
@@ -260,19 +246,14 @@ JAVA_9="/Library/Java/JavaVirtualMachines/jdk-9.jdk/Contents/Home"
 echo "________________________________________________________________________________"
 export LC_ALL=en_US.UTF-8
 uname -a
-
 ## Change CL to be colored for MAC
 export CLICOLOR=1
 export TERM="xterm-color" 
 
-# export PATH=$OPT_PREFIX/gcc7/bin:$PATH
-export PATH="$OPT_PREFIX/gcc/lib/gcc/7:$PATH"
-
-
 ## Python include/lib support
 PYVM_VER=python3.6m ## python3.6dm for debug
-#CPPFLAGS="-I/usr/local/opt/python3/include/$PYVM_VER $CPPFLAGS" 
-#LDFLAGS="-L/usr/local/opt/python3/lib $LDFLAGS"
+CPPFLAGS="-I/usr/local/opt/python3/include/$PYVM_VER $CPPFLAGS" 
+LDFLAGS="-L/usr/local/opt/python3/lib $LDFLAGS"
 
 ## GNU GCC setup for OSX
 ## GNU GCC/ BINUTILS SUPPORT
@@ -421,7 +402,7 @@ GNUTLS_CFLAGS=$CFLAGS
 alias cp='cp -iv'                           # Preferred 'cp' implementation
 alias mv='mv -iv'                           # Preferred 'mv' implementation
 alias mkdir='mkdir -pv'                     # Preferred 'mkdir' implementation
-alias ls="ls $COLOR_FLAG"					# Ensure ls will display color
+alias ls="ls $COLOR_FLAG"                   # Ensure ls will display color
 alias ll='ls -FGlAhp $COLOR_FLAG'          # Preferred 'ls' implementation
 alias sofu="du -d 1 * | sort -n -k1" ## Sort file using du , accending , --max-depth means -d
 
@@ -438,7 +419,7 @@ alias .3='cd ../../../'                     # Go back 3 directory levels
 alias .4='cd ../../../../'                  # Go back 4 directory levels
 alias .5='cd ../../../../../'               # Go back 5 directory levels
 alias .6='cd ../../../../../../'            # Go back 6 directory levels
-alias edit='sll'                            # edit:         Opens any file in sublime editor
+alias edit='/usr/bin/vi'                            # edit:         Opens any file in sublime editor
 alias ~="cd ~"                              # ~:            Go Home
 alias c='clear'                             # c:            Clear terminal display
 alias wwich='type -all'                     # wwich:        Find executables
@@ -470,8 +451,14 @@ alias lr='ls -R | grep ":$" | sed -e '\''s/:$//'\'' -e '\''s/[^-][^\/]*\//--/g'\
 #   -------------------------------
 #   3.  FILE AND FOLDER MANAGEMENT
 #   -------------------------------
+#   to create a file of a given size: /usr/sbin/mkfile or /usr/bin/hdiutil
+#   ---------------------------------------
+#   e.g.: mkfile 10m 10MB.dat
+#   e.g.: hdiutil create -size 10m 10MB.dmg
+#   the above create files that are almost all zeros - if random bytes are desired
+#   then use: ~/Dev/Perl/randBytes 1048576 > 10MB.dat
 
-alias numFiles='echo "Total files in directory:" $(ls -1 | wc -l)'      # numFiles:     Count of non-hidden files in current dir
+alias nofiles='echo "Total files in directory:" $(ls -1 | wc -l)'      # numFiles:     Count of non-hidden files in current dir
 alias make1mb='mkfile 1m ./1MB.dat'         # make1mb:      Creates a file of 1mb size (all zeros)
 alias make5mb='mkfile 5m ./5MB.dat'         # make5mb:      Creates a file of 5mb size (all zeros)
 alias make10mb='mkfile 10m ./10MB.dat'      # make10mb:     Creates a file of 10mb size (all zeros)
@@ -500,8 +487,8 @@ EOT
     extract () {
         if [ -f $1 ] ; then
           case $1 in
-          	*.tar.lz4)   unlz4dir $1	    ;;
-          	*.tar.xz)    tar xf $1      ;;
+            *.tar.lz4)   unlz4dir $1        ;;
+            *.tar.xz)    tar xf $1      ;;
             *.tar.bz2)   tar xjf $1     ;;
             *.tar.gz)    tar xzf $1     ;;
             *.bz2)       bunzip2 $1     ;;
@@ -513,8 +500,8 @@ EOT
             *.zip)       unzip $1       ;;
             *.Z)         uncompress $1  ;;
             *.7z)        7z x $1        ;;
-			*.lz4)       unlz4 $1       ;;
-			*.lzma)      tar --lzma -xvf f $1 ;;
+            *.lz4)       unlz4 $1       ;;
+            *.lzma)      tar --lzma -xvf f $1 ;;
             *)     echo "'$1' cannot be extracted via extract()" ;;
              esac
          else
@@ -527,10 +514,15 @@ EOT
 #   4.  SEARCHING
 #   ---------------------------
 
-alias qfind="find . -name "                 # qfind:    Quickly search for file
-ff () { find . -name "$@" ; }      # ff:       Find file under the current directory
-ffs () { find . -name "$@"'*' ; }  # ffs:      Find file whose name starts with a given string
-ffe () { find . -name '*'"$@" ; }  # ffe:      Find file whose name ends with a given string
+alias qfind="find . -name "        # qfind:    Quickly search for file
+function ff () { find . -name "$@" ; }      # ff:       Find file under the current directory
+function ffs () { find . -name "$@"'*' ; }  # ffs:      Find file whose name starts with a given string
+function ffe () { find . -name '*'"$@" ; }  # ffe:      Find file whose name ends with a given string
+function gftype() {
+    echo "[Info] This support you to grep certian filename suffix"
+    echo "[Usage] 'find . | gftype log' to find all *.log"
+    grep ".*\."$1"$"
+}
 
 #   spotlight: Search for a file using MacOS Spotlight's metadata
 #   -----------------------------------------------------------
@@ -540,7 +532,6 @@ ffe () { find . -name '*'"$@" ; }  # ffe:      Find file whose name ends with a 
 #   ---------------------------
 #   5.  PROCESS MANAGEMENT
 #   ---------------------------
-
 #   findpid: find out the pid of a specified process
 #   -----------------------------------------------------
 #       Note that the command name can be specified via a regex
@@ -552,16 +543,15 @@ ffe () { find . -name '*'"$@" ; }  # ffe:      Find file whose name ends with a 
 
 ## This script helps you find out the pid of a process on specific port
 ## Example : portid 80
-	function portid () { 
-	 sport="$@"
-	 lsof -i:$sport
-	 echo "------"
-	 echo "Port:"$sport",PID=" $(lsof -i:$sport | grep $(whoami) | awk '{print $2}');
-	}
-	# function ppid() { 
-	# 	echo $! >test.pid | cat test.pid 
-	# }
-
+    function portid () { 
+     sport="$@"
+     lsof -i:$sport
+     echo "------"
+     echo "Port:"$sport",PID=" $(lsof -i:$sport | grep $(whoami) | awk '{print $2}');
+    }
+    # function ppid() { 
+    #   echo $! >test.pid | cat test.pid 
+    # }
 
 #   memHogsTop, memHogsPs:  Find memory hogs
 #   -----------------------------------------------------
@@ -583,16 +573,16 @@ ffe () { find . -name '*'"$@" ; }  # ffe:      Find file whose name ends with a 
 #   ------------------------------------------------------------
     alias ttop="top -R -F -s 10 -o rsize"
 
-#   my_ps: List processes owned by my user:
+#   myps: List processes owned by my user:
 #   ------------------------------------------------------------
-    function my_ps() { ps $@ -u $USER -o pid,%cpu,%mem,start,time,bsdtime,command ; }
+    function myps() { ps $@ -u $USER -o pid,%cpu,%mem,start,time,bsdtime,command ; }
 
 #   ---------------------------
 #   6.  NETWORKING
 #   ---------------------------
 
 alias servall='sudo kill $(lsof -t -i:80,443,8080)&& echo "Killed processs on 80,443,8080"' # Reset all Http ports
-alias netCons='lsof -i'                             # netCons:      Show all open TCP/IP sockets
+alias netconns='lsof -i'                             # netCons:      Show all open TCP/IP sockets
 alias flushDNS='dscacheutil -flushcache'            # flushDNS:     Flush out the DNS Cache
 alias lsock='sudo /usr/sbin/lsof -i -P'             # lsock:        Display open sockets
 alias lsockU='sudo /usr/sbin/lsof -nP | grep UDP'   # lsockU:       Display only open UDP sockets
@@ -620,8 +610,7 @@ alias showBlocked='sudo ipfw list'                  # showBlocked:  All ipfw rul
 #   ---------------------------------------
 #   7.  SYSTEMS OPERATIONS & INFORMATION
 #   ---------------------------------------
-
-	alias mountReadWrite='/sbin/mount -uw /'    # mountReadWrite:   For use when booted into single-user
+    alias mountReadWrite='/sbin/mount -uw /'    # mountReadWrite:   For use when booted into single-user
 
 #   cleanupDS:  Recursively delete .DS_Store files
 #   -------------------------------------------------------------------
@@ -681,14 +670,6 @@ function httpDebug () { /usr/bin/curl $@ -o /dev/null -w "dns: %{time_namelookup
 #   mount -t msdos /dev/disk1s1 /Volumes/Foo
 #   mount -t hfs /dev/disk1s1 /Volumes/Foo
 
-#   to create a file of a given size: /usr/sbin/mkfile or /usr/bin/hdiutil
-#   ---------------------------------------
-#   e.g.: mkfile 10m 10MB.dat
-#   e.g.: hdiutil create -size 10m 10MB.dmg
-#   the above create files that are almost all zeros - if random bytes are desired
-#   then use: ~/Dev/Perl/randBytes 1048576 > 10MB.dat
-
-
 ##### Dropbox_shell integration #####
 #Looking for dropbox uploader
 if [ -f "./dup.sh" ]; then
@@ -706,12 +687,12 @@ DU=/usr/local/bin/dup.sh
 
 SHELL_HISTORY=~/.dropshell_history
 DU_OPT="-q"
-#BIN_DEPS="id $READLINK ls basename ls pwd cut"
 DU_VERSION="0.2"
 
 umask 077
 
 #Dependencies check
+# BIN_DEPS="id $READLINK ls basename ls pwd cut"
 # for i in $BIN_DEPS; do
 #    which $i > /dev/null
 #    if [ $? -ne 0 ]; then
@@ -733,15 +714,11 @@ alias normalize_path="$READLINK -m"
 ################
 #### START  ####
 ################
-
-
 history -r "$SHELL_HISTORY"
 username=$(id -nu) ##  or $(whoami)
 
 #Initial Working Directory
-
-function dls
-{
+function dls {
     local arg1=$1
 
     #Listing current dir
@@ -765,8 +742,7 @@ function dls
     fi
 }
 
-function dcd
-{
+function dcd {
     local arg1=$1
 
     OLD_CWD=$CWD
@@ -788,25 +764,21 @@ function dcd
     fi
 }
 
-function dget
-{
+function dget {
     local arg1=$1
     local arg2=$2
 
     if [ ! -z "$arg1" ]; then
-
         #Relative or absolute path?
         if [ ${arg1:0:1} == "/" ]; then
             "$DU" $DU_OPT download "$(normalize_path "$arg1")" "$arg2"
         else
             "$DU" $DU_OPT download "$(normalize_path "$CWD/$arg1")" "$arg2"
         fi
-
         #Checking for errors
         if [ $? -ne 0 ]; then
             echo -e "get: Download error"
         fi
-
     #args error
     else
         echo -e "get: missing operand"
@@ -814,8 +786,7 @@ function dget
     fi
 }
 
-function dput
-{
+function dput {
     local arg1=$1
     local arg2=$2
 
@@ -990,12 +961,12 @@ function dcat
 }
 ### Tensorboard Support ###
 function tengo() {
-	tensorboard --host 127.0.0.1 --logdir="$@" &
-	open http://127.0.0.1:6006
+    tensorboard --host 127.0.0.1 --logdir="$@" &
+    open http://127.0.0.1:6006
 }
 
 function tenx() {
-	kill $(! lsof -i:6006 | grep localhost:6006 |awk '{print $2}' )
+    kill $(! lsof -i:6006 | grep localhost:6006 |awk '{print $2}' )
 }
 
 ### HADOOP SERVER COMMANDS###
@@ -1007,6 +978,7 @@ function hstart() {
     echo "[Info] hstart, Function to start hadoop server in brew"
     $HADOOP_SBIN/start-dfs.sh;$HADOOP_SBIN/start-yarn.sh
 }
+
 function hstop() {
     echo "[Info] hstop, Function to stop hadoop server in brew"
     $HADOOP_SBIN/stop-yarn.sh; $HADOOP_SBIN/stop-dfs.sh
@@ -1021,124 +993,125 @@ function hcl() {
 # Finished adapting your PATH environment variable for use with MacPorts.
 export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
 
+function cmacabi() { 
+	## Check whether you are booting in 64bit firmware
+	## http://www.hackaapl.com/forcing-snow-leopard-os-x-to-boot-64-bit-kernel/
+	ioreg -l -p IODeviceTree | grep firmware-abi
+}
+
 function ccpu () {
     echo "[Info] ccpu, Function to show the gpu's strength"
-	if [ "$(uname -s)" == "Linux" ]; then
-	        /bin/cat /proc/cpuinfo &&
-	        lscpu
-	elif [ "$(uname -s)" == "Darwin" ]; then
-	  	   system_profiler SPHardwareDataType
-		   sysctl -n machdep.cpu.brand_string
-	       sysctl hw && 
-	       system_profiler >> sysinfo && ## This command takes a long time
-	       echo "> cat sysinfo < to see result"
-	fi
+    if [ "$(uname -s)" == "Linux" ]; then
+            /bin/cat /proc/cpuinfo &&
+            lscpu
+    elif [ "$(uname -s)" == "Darwin" ]; then
+           system_profiler SPHardwareDataType
+           sysctl -n machdep.cpu.brand_string
+           sysctl hw && 
+           system_profiler >> sysinfo && ## This command takes a long time
+           echo "> cat sysinfo < to see result"
+    fi
 }
 
 function cgpu () {
     echo "[Info] cgpu, Function to show the gpu's strength"
-	if [ "$(uname -s)" == "Linux" ]; then
-	        lspci  -v -s  $(lspci | grep VGA | cut -d" " -f 1) 
-	elif [ "$(uname -s)" == "Darwin" ]; then
-	       glxinfo > gpuinfo && cat gpuinfo
-	       echo "> cat gpuinfo < to see result"
-	fi
+    if [ "$(uname -s)" == "Linux" ]; then
+            lspci  -v -s  $(lspci | grep VGA | cut -d" " -f 1) 
+    elif [ "$(uname -s)" == "Darwin" ]; then
+           glxinfo > gpuinfo && cat gpuinfo
+           echo "> cat gpuinfo < to see result"
+    fi
 }
 
 function cefi() {
     echo "[Info][MacOS] cefi, Show the running EFI version to be 64 bit or 32bit"
-	ioreg -l -p IODeviceTree | grep firmware-abi
+    ioreg -l -p IODeviceTree | grep firmware-abi
 }
 
 function kweb () {
     echo "[Info] kweb, Function to close port 8080"
-	arg1 = $(sudo lsof -t -i:8080)
+    arg1=$(sudo lsof -t -i:8080)
     sudo kill $arg1 && echo "Killed processs on" $1
 }
 
 function rcf () {
     echo "[Info] rcf, Function to find rows and columns of a file, delimitor is a space ' '' "
-	echo File name: $1
-	awk '{ print "Rows : "NR"\nColumns : "NF }' $1
+    echo File name: $1
+    awk '{ print "Rows : "NR"\nColumns : "NF }' $1
 }
 
 function tsfile () {
     echo "[Info] tsfile, Function that transverse a file."
-	awk '
-	{
-	    for (i = 1; i <= NF; i++) {
-	        if(NR == 1) {
-	            s[i] = $i;
-	        } else {
-	            s[i] = s[i] " " $i;
-	        }
-	    }
-	}
-	END {
-	    for (i = 1; s[i] != ""; i++) {
-	        print s[i];
-	    }
-	}' $1
+    awk '
+    {
+        for (i = 1; i <= NF; i++) {
+            if(NR == 1) {
+                s[i] = $i;
+            } else {
+                s[i] = s[i] " " $i;
+            }
+        }
+    }
+    END {
+        for (i = 1; s[i] != ""; i++) {
+            print s[i];
+        }
+    }' $1
 }
 
 function arrys () {
      echo "[Info] arrys, Function that Generate a random Integer array"
-	num_rows=$1
-	num_columns=$2
+    num_rows=$1
+    num_columns=$2
 
-	for ((i=1;i<=num_rows;i++)) do
-	    for ((j=1;j<=num_columns;j++)) do
-	        matrix[$i,$j]=$RANDOM
-	    done
-	done
-	f1="%$((${#num_rows}+1))s"
-	f2=" %9s"
-	printf "$f1" ''
-	for ((i=1;i<=num_rows;i++)) do
-	    printf "$f2" $i
-	done
-	echo
-	for ((j=1;j<=num_columns;j++)) do
-	    printf "$f1" $j
-	    for ((i=1;i<=num_rows;i++)) do
-	        printf "$f2" ${matrix[$i,$j]}
-	    done
-	    echo
-	done
+    for ((i=1;i<=num_rows;i++)) do
+        for ((j=1;j<=num_columns;j++)) do
+            matrix[$i,$j]=$RANDOM
+        done
+    done
+    f1="%$((${#num_rows}+1))s"
+    f2=" %9s"
+    printf "$f1" ''
+    for ((i=1;i<=num_rows;i++)) do
+        printf "$f2" $i
+    done
+    echo
+    for ((j=1;j<=num_columns;j++)) do
+        printf "$f1" $j
+        for ((i=1;i<=num_rows;i++)) do
+            printf "$f2" ${matrix[$i,$j]}
+        done
+        echo
+    done
 }
 
 function createswap () {
     echo "[Info][Linux] creatswap, Function that create swap for linux based system"
-	sudo mkdir -p /var/cache/swap/
-	sudo dd if=/dev/zero of=/var/cache/swap/swap0 bs=1M count=1000
-	sudo chmod 0600 /var/cache/swap/swap0
-	sudo mkswap /var/cache/swap/swap0 
-	sudo swapon /var/cache/swap/swap0
+    sudo mkdir -p /var/cache/swap/
+    sudo dd if=/dev/zero of=/var/cache/swap/swap0 bs=1M count=1000
+    sudo chmod 0600 /var/cache/swap/swap0
+    sudo mkswap /var/cache/swap/swap0 
+    sudo swapon /var/cache/swap/swap0
 }
 
-##
-## Port Scann for certain IP
-##
+## Port Scann for specific IP
 function allport() {
     nmap -Pn $1 >> ps_reports&
 }
 
-##
 ## Show Kernal's Threads Counts // MAC only
-##
-function cthread () {
-    sudo sysctl  -A | grep thread
-	if [ "$(uname -s)" == "Darwin" ]; then
-	    sysctl kern.maxproc
-		sysctl kern.maxvnodes
-		sysctl kern.maxfiles
-	fi
+function cthreads () {
+    sysctl  -A | grep thread
+    if [ "$(uname -s)" == "Darwin" ]; then
+        sysctl kern.maxproc
+        sysctl kern.maxvnodes
+        sysctl kern.maxfiles
+    fi
 }
 
 ## Show Word counts in a file
 ## Usage  : mywc Filename
 ## Author : Ralic Lo
-
 function mywc() {
      # Firt two methods are high memory usage
      # cat $1 |tr ' ' '\n' | sort | uniq -c | awk '{print $2" "$1}'
@@ -1149,7 +1122,6 @@ function mywc() {
 ## GET IPs from log file.
 ## Usage  : iplog Filename
 ## Author : Ralic Lo
-
 function iplog() {
     mywc $1 | grep -E "^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}.*"  > logs
     cat logs | gawk -F " " '{print $1}'
@@ -1158,28 +1130,28 @@ function iplog() {
 }
 
 function mip() {
-        mkdir mip
-        z=$(wc -l ips| awk '{print $1}')
-        zbak=$z
-        zz=0
-        while [ $z -gt 0 ] 
-        do
-            ((z--))
-            # echo $z  ## for debug only
-            cat ips | awk '{print "ipinfo " $1 " &&"}' > ./mip/mip.log
-            echo 'echo [INFO]  ALL Task COMPLETED ' >> ./mip/mip.log
-            . ./mip/mip.log  &&
-            ((zz= $z % 50))
-            # echo $zz ## for debug only
-            while [ $zz -eq 1 ]
-            do  
-                # echo '[INFO] Created 50 PIDs,  sleep 1 sec'
-                # sleep 1 ## for debug only
-                zz=0
-            done
+    mkdir mip
+    z=$(wc -l ips| awk '{print $1}')
+    zbak=$z
+    zz=0
+    while [ $z -gt 0 ] 
+    do
+        ((z--))
+        # echo $z  ## for debug only
+        cat ips | awk '{print "ipinfo " $1 " &&"}' > ./mip/mip.log
+        echo 'echo [INFO]  ALL Task COMPLETED ' >> ./mip/mip.log
+        . ./mip/mip.log  &&
+        ((zz= $z % 50))
+        # echo $zz ## for debug only
+        while [ $zz -eq 1 ]
+        do  
+            # echo '[INFO] Created 50 PIDs,  sleep 1 sec'
+            # sleep 1 ## for debug only
+            zz=0
         done
-        # sleep 60 && echo [INFO] Task mip COMPLETED &
-        echo $zbak ## for debug only
+    done
+    # sleep 60 && echo [INFO] Task mip COMPLETED &
+    echo $zbak ## for debug only
 }
 
 ## This script finds possible server ip address
@@ -1187,63 +1159,56 @@ function mip() {
 ## Author: Ralic Lo
 
 function cip () {
-        z=10000
-        zz=0
-        while [ $z -gt 0 ] 
+    local z=10000
+    local zz=0
+    while [ $z -gt 0 ] 
+    do
+        ((z--))
+        #echo $z
+        dig -n $1 | grep IN | awk '{print $5}' >> tester 
+        ((zz= $z % 50))
+        while [ $zz -eq 1 ]
         do
-            ((z--))
-            #echo $z
-            dig -n $1 | grep IN | awk '{print $5}' >> tester 
-            ((zz= $z % 50))
-            
-            while [ $zz -eq 1 ]
-            do
-                cat tester | sort | uniq > tester2
-                zz=0
-                yes|cp tester2 tester
-            done
+            cat tester | sort | uniq > tester2
+            zz=0
+            yes|cp tester2 tester
         done
+    done
 }
 ## Encrypt file with password
 ## Usage cry filename password 
 ## Author : Ralic Lo
-
 function cry() {
-	openssl enc -in $1 -out cry.out -e -aes256 -k $2 --salt
-	echo "Target File: " $1 " encrypted as cry.out"
+    openssl enc -in $1 -out cry.out -e -aes256 -k $2 --salt
+    echo "Target File: " $1 " encrypted as cry.out"
 }
 
 ## Decrypt file with password
 ## Usage dontcry filename password 
 ## Author : Ralic Lo
-
 function dncry() {
-	openssl enc -in $1 -out dncry.out -d -aes256 -k $2
-	echo "Target File: " $1 " decrypted as dncry.out"
+    openssl enc -in $1 -out dncry.out -d -aes256 -k $2
+    echo "Target File: " $1 " decrypted as dncry.out"
 }
 
 ## This script allows you to upload files to mega storage
 ## Usage : runmega , . megad2  , . megaf2
 ## Author: Ralic Lo
-
 function runmega() { 
-	find . -type d | sort| uniq | awk '{print "megacmd mkdir mega:/test/"$1" &"}' > megad
-	cat megad > megad2
-	find . | sort | uniq | sed 's/^.\{1\}//g'| awk '{print "megacmd put ."$1" mega:/test"$1}' > megaf
-	cat megaf > megaf2
-	rm megaf
-	rm megad
+    find . -type d | sort| uniq | awk '{print "megacmd mkdir mega:/test/"$1" &"}' > megad
+    cat megad > megad2
+    find . | sort | uniq | sed 's/^.\{1\}//g'| awk '{print "megacmd put ."$1" mega:/test"$1}' > megaf
+    cat megaf > megaf2
+    rm megaf
+    rm megad
 }
 
-
-## Reference : 
-## This script help you build ios and android app easier.
-## Usage : capp
-## Prerequesite : gomobil, cios, cadnd
+## Prerequesite : cios, cadnd
 ## Author: Ralic Lo
 
 function capp () {
- echo "options: cordova | reacts | (get)mobile | (cfav)icon"
+    echo "[Info] : capp, This script help you build ios and android app easier."
+    echo "options: cordova | reacts | (get)mobile | (cfav)icon"
     read option
     case $option in 
         get)
@@ -1316,12 +1281,12 @@ function cios() {
     cordova emulate ios --target="iPhone-6, 9.3"
 }
 
-## This script allows you to use cordova-cli to run android project
 ## Usage : cadnd
 ## Prerequesite : Execute under a cordova project root directory
 ## Author: Ralic Lo
 
 function cadnd() {
+    echo "[Info] cadnd, This script allows you to use cordova-cli to run android project"
     echo "options: new | run"
     read option
     case $option in 
@@ -1338,13 +1303,12 @@ function cadnd() {
         ;;
     esac
 }
-
-## This script allows you to use react-native cli to run android project
+ 
 ## Usage : reacts , choose option
-## Prerequesite : node.js&npm , XCode , Android Studio, Android Build Tools 23.0.1
+## Prerequesite : node.js, npm , XCode , Android Studio, Android Build Tools 23.0.1
 ## Author: Ralic Lo
-
 function reacts () {
+    echo "[Info] reacts, This script allows you to use react-native cli to run android project"
     echo "options : (install) | (init) | (web) | (ios) | (android)"
     read option
     case $option in 
@@ -1381,25 +1345,21 @@ function reacts () {
         *)
         ;;
     esac
-
 }
-## This script allows you to use cordova-cli to run ios project on Mac
-## Usage : geny
+
 ## Prerequesite : Must have genymotion installed
 ## Author: Ralic Lo
-
 function geny(){
+    echo "[Info] geny, This script allows you to use cordova-cli to run ios project on Mac"
     #Alternative android avd
     #REF: https://facebook.github.io/react-native/docs/android-setup.html
     open /Applications/Genymotion.app
 }
 
 
-## This script allows you to update github master .. 
-## Usage : Use it carefully..
-## Under Development
+## This script allows you to update github master 
+## Usage : Use it carefully.., under Development
 ## Author: Ralic Lo
-
 function goes6(){
     ## require json /nodejs installed.
     cat package.json | json repository.url > git.origin
@@ -1414,10 +1374,8 @@ function goes6(){
 }
 
 ## This script redirect unwanted traffic on your ssh port 
-## Usage : Use it carefully..
-## For CentOS/RedHat system
+## Usage : Use it carefully.. , works for CentOS/RedHat system
 ## Author: Ralic Lo
-
 function redIP() {
     # echo "1" > /proc/sys/net/ipv4/ip_forward
     # sysctl net.ipv4.ip_forward=1
@@ -1426,10 +1384,8 @@ function redIP() {
 }
 
 ## This script helps to setup docker on macOS
-## Usage : 
 ## For macOS
 ## Author: Ralic Lo
-
 function ddocker () {
     echo "------"
     echo [Info] If you have not installed docker "brew install docker-machine docker-compose" 
@@ -1445,15 +1401,14 @@ function ddocker () {
     echo "------"
     alias dm=docker-machine
     sudo docker-machine ls
-	sudo docker-machine env
-	sudo eval $(docker-machine env default)
+    sudo docker-machine env
+    sudo eval $(docker-machine env default)
 }
 
 ## This script helps to initial Electron Desktop application (from Github) 
 ## Usage : ec <filename> 
 ## For macOS , Installed Electron
 ## Author: Ralic Lo
-
 function ec () {
     # Download and install Electron here --  http://electron.atom.io/
     ## Check software version
@@ -1463,9 +1418,8 @@ function ec () {
 }
 
 function composer () {
-## Exit if no args.
 if [[ $# -eq 0 ]] ; then
-    echo [Error] No arguments.
+    echo "[Error] No arguments."
     return 0
 fi
     # https://getcomposer.org/download/
@@ -1598,7 +1552,7 @@ fi
 ## Author: Ralic Lo
 
 function ipinfo() {
-	    echo '{"ip":"'$1'"'> ipgeo.json
+        echo '{"ip":"'$1'"'> ipgeo.json
         curl "http://addgadgets.com/ipaddress/index.php?ipaddr=$1" |
         grep -E "Country.*<\/td>|Latitude.*<\/td>|Longitude.*<\/td>" |
         sed 's/<[^>]*>/"/g' |
@@ -1607,7 +1561,7 @@ function ipinfo() {
         sed 's/:&nbsp;/":/g'|
         sed 's/^/,/'  >> ipgeo.json
         echo '}' >> ipgeo.json
-        cat ipgeo.json	
+        cat ipgeo.json  
 }
 
 
@@ -1617,9 +1571,9 @@ function ipinfo() {
 
 function gdir() {
     if [[ $# -eq 2 ]] ; then
-	#npm i google-maps-direction-cli -g
-	#Example direction "taoyuan" "taipei"
-	direction "$1" "$2"
+    #npm i google-maps-direction-cli -g
+    #Example direction "taoyuan" "taipei"
+    direction "$1" "$2"
     return
     fi
     direction
@@ -1627,15 +1581,15 @@ function gdir() {
 
 function glat() {
     if [[ $# -eq 0 ]] ; then
-    	echo [Info] latlng=23.69781,120.96
-    	echo [Info] example gip 23.69781,120.96
-		echo $1 
-    	echo 'curl https://maps.googleapis.com/maps/api/geocode/json?latlng=$1,$2 | json results[0].formatted_address'
+        echo [Info] latlng=23.69781,120.96
+        echo [Info] example gip 23.69781,120.96
+        echo $1 
+        echo 'curl https://maps.googleapis.com/maps/api/geocode/json?latlng=$1,$2 | json results[0].formatted_address'
     return 0
     fi
     latlng=$1
-	curl https://maps.googleapis.com/maps/api/geocode/json?latlng=$latlng | json results[0].formatted_address
-	unset latlng
+    curl https://maps.googleapis.com/maps/api/geocode/json?latlng=$latlng | json results[0].formatted_address
+    unset latlng
 }
 
 ## This script helps to turn ip2loc
@@ -1643,30 +1597,30 @@ function glat() {
 ## Author: Ralic Lo
 
 function ip2loc() {
-	if [[ $# -eq 0 ]] ; then
+    if [[ $# -eq 0 ]] ; then
     ipinfo $(myip2)
     return 0
     fi
 
     ipinfo $1 ||
-	echo $(json -f ipgeo.json City_Latitude)","$(json -f ipgeo.json City_Longitude) >tmp
-	latlng="$(cat tmp)"
-	glat $latlng > tmp
-	unset latlng
+    echo $(json -f ipgeo.json City_Latitude)","$(json -f ipgeo.json City_Longitude) >tmp
+    latlng="$(cat tmp)"
+    glat $latlng > tmp
+    unset latlng
 
-	src="
-	fs=require('fs');
-	ip=require('./ipgeo.json');
-	data=fs.readFileSync('./tmp').toString().replace(/\n$/, '');
-	ip.Address=data;
-	fs.writeFileSync('./ipgeo.json',JSON.stringify(ip, null, 2) , 'utf-8');"
-	echo $src > src.js
+    src="
+    fs=require('fs');
+    ip=require('./ipgeo.json');
+    data=fs.readFileSync('./tmp').toString().replace(/\n$/, '');
+    ip.Address=data;
+    fs.writeFileSync('./ipgeo.json',JSON.stringify(ip, null, 2) , 'utf-8');"
+    echo $src > src.js
     
-	shjs src.js
-	unset src
-	rm src.js
+    shjs src.js
+    unset src
+    rm src.js
     rm tmp
-	cat ipgeo.json
+    cat ipgeo.json
 }
 
 ## This script helps to push/install apk into android 
@@ -1674,15 +1628,15 @@ function ip2loc() {
 ## Author: Ralic Lo
 
 function aapk() {
-	if [[ $# -eq 0 ]] ; then
-		echo "Please type in the file name, without extension .apk"
+    if [[ $# -eq 0 ]] ; then
+        echo "Please type in the file name, without extension .apk"
     return 0
     fi
     if [ ${1: -4} == ".apk" ] ; then
-		echo [Running] adb push "./"$1".apk" "/data/local/tmp/"$1
-		adb push "./"$1".apk" "/data/local/tmp/"$1
-		echo [Running] adb shell pm install -r "/data/local/tmp/"$1
-		adb shell pm install -r "/data/local/tmp/"$1
+        echo [Running] adb push "./"$1".apk" "/data/local/tmp/"$1
+        adb push "./"$1".apk" "/data/local/tmp/"$1
+        echo [Running] adb shell pm install -r "/data/local/tmp/"$1
+        adb shell pm install -r "/data/local/tmp/"$1
         return
     else
         echo "This is not apk file, pushing it to /data/local/tmp"
@@ -1893,7 +1847,7 @@ function ggit() {
             gcloud source repos clone $gfolder --project=$gproject
         ;;
         *)
-            [Info] Use "load" before running any commands.
+            "[Info] Use 'load' before running any commands."
         ;;
     esac
 }
@@ -1903,7 +1857,7 @@ function vs () {
 }
 
 function bsc() {
-	browser-sync start --server --files "*.html, css/*.css"
+    browser-sync start --server --files "*.html, css/*.css"
 }
 
 
@@ -1943,18 +1897,16 @@ function cmsrc() {
                 chrome-cli source -t $@
         fi
 }
-
 ## This script helps to inject javascript file into running chrome tab
 ## Author: Ralic Lo
-
 function cmrun() {
     if [[ $# -eq 0 ]] ; then
-    echo Example : chrome-cli execute "script=function () {
+        echo Example : chrome-cli execute "script=function () {
                             var a=3;var b=5;
                             console.log('Cool Success',a+b);
                             return a+b;
                         }()" -t $(cmnow)
-                        return
+        return
     fi
     ## ex. cmrun test.js
     echo chrome-cli execute '"$(cat $1)"'  -t $(cmnow)> run.script 
@@ -2019,13 +1971,13 @@ function cmiot2() {
     TT_API2="https://translate.google.com/translate?hl=&sl=auto&tl=zh-TW&u="
     chrome-cli open $TTAPI2"$@"
 }
+## READ WEBSITE IN CHINESE,ZH-TW 
 function cmiot() {
     usg=ALkJrhi7ckC8KCnB15kFgAPpSMtdQ6YLmg
     TT_API="https://translate.googleusercontent.com/translate_c?depth=2&nv=1&rurl=translate.google.com&sl=auto&sp=nmt4&tl=zh-TW&u="
     cmio $TT_API"$@"$usg
 }
-
-## This script is to use google's website tranlation to english
+## READ WEBSITE IN ENGLISH
 alias ggzh=cmiot
 
 function cmioten() {
@@ -2033,6 +1985,11 @@ function cmioten() {
     cmio $TT_API"$@"
 }
 
+## This script is to use google's website tranlation to english
+function gen() {
+    trans_prefix="https://translate.google.com/translate?hl=en&sl=auto&tl=en&u="
+    open $trans_prefix$@
+}
 
 # function cmit() {
 #     echo [Info] Enter Options to translate 
@@ -2043,9 +2000,6 @@ function cmioten() {
 #                  return
 #             ;;      
 #             zh-TW) 
-#                  gradle installDebug 
-
-#                echo [Info] Please Select again.
 #             ;;
 #         esac
 #     cmo --incognito "https://translate.google.com/translate?hl=en&sl=auto&tl=zh-TW&sandbox=&u=""$@"
@@ -2083,9 +2037,8 @@ function checkjdk() {
 
 ## This script allows your download youtube as mp4 files.
 function yp() {
-	youtube-dl -f 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio' --merge-output-format mp4 "$@"
+    youtube-dl -f 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio' --merge-output-format mp4 "$@"
 }
-
 
 ## This script Help initial MOE Test on IOS / Android
 function mockmoe() {
@@ -2094,7 +2047,6 @@ function mockmoe() {
     echo "2) Install Android Application"
     echo "3) Start iOS Simulator"
     echo "4) Install iOS Application"
-
     # echo "9) Exit"
     read option
     # while [ $option -ne 0]
@@ -2123,8 +2075,7 @@ function mockmoe() {
     # done
 }
 
-## This script is powerful touch, that enforce to create a file in the path.
-
+## This script is powerful touch, to enforce creating a file in the path 
 ptouch() {
     for p in "$@"; do
         _dir="$(dirname -- "$p")"
@@ -2133,47 +2084,43 @@ ptouch() {
     done
 }
 
-
 ## This script is powerful wget to get a website clone.
 ## https://www.guyrutenberg.com/2014/05/02/make-offline-mirror-of-a-site-using-wget/
-## RATE LIMIT : 
-## ‐‐limit-rate=200k ‐‐wait=60
+## RATE LIMIT : ‐‐limit-rate=200k ‐‐wait=60
 ## Simplified : wget -mkEpnp http://example.org
-
 uberget() {
-    wget  ‐‐random-wait  -e robots=off  --mirror --adjust-extension --page-requisites  --user-agent=Mozilla --convert-links --no-parent -r -x "$1"
+## Other agents: https://support.google.com/webmasters/answer/1061943?hl=en
+## "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.8; rv:21.0) Gecko/20100101 Firefox/21.0"
+## Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.96 Mobile Safari/537.36 
+tee ~/.wgetrc <<-'EOF'
+header = Accept-Language: en-us,en;q=0.5
+header = Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+header = Connection: keep-alive
+user_agent = "Mozilla/5.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1"
+referer = /
+robots = off
+EOF
+    wget ‐‐random-wait -e --mirror --adjust-extension --page-requisites  --convert-links --no-parent -r -x "$1"
 }
 
 ## This script is to build Java program using gradle with all cores.
 ## gjob : build parallely and never stop when failure
 ## glist : list all partial projects
 
-gjob() {
+function gjob() { # --configure-on-demand 
     gradle build --parallel --daemon --continue "$@"
-    # --configure-on-demand 
 }
 
-glist() {
+function glist() {  # --configure-on-demand 
   gradle build --parallel --daemon  -q projects 
-  # --configure-on-demand 
 }
-## This script is to use google's website tranlation to english
-gen() {
-	trans_prefix="https://translate.google.com/translate?hl=en&sl=auto&tl=en&u="
-	open $trans_prefix$@
-}
-
-
 ## This command help read specific line in a file
-## Format : cline line#  (filename)
 ## Example : cline 10 (test.txt)
 cline() {
     awk NR=="$@"
 }
 
-## This script helps move first few lines to new file
-## Format
-
+## This script helps move first 100 lines to new file
 new100() {
     dateinfo=$(date +%Y-%m-%d-%H%M)
     echo $dateinfo
@@ -2186,11 +2133,9 @@ new100() {
 }
 
 ## This script helps update android sdk to the latest
-
 adup() {
-	android update sdk --no-ui --all
+    android update sdk --no-ui --all
 }
-
 
 ## This script helps create Gulp file monitoring
 ## Prerequisite : npm, gulpfile.js
@@ -2200,12 +2145,12 @@ adup() {
 #    //https://www.npmjs.com/package/gulp-live-server
 #   var server = gls.static('./', 80);
 #   server.start();
- 
 #     //use gulp.watch to trigger server actions(notify, start or stop) 
 #     gulp.watch(['**/*.css', '**/*.html'], function (file) {
 #       server.notify.apply(server, [file]);
 #     });
 # });
+
 golive() {
     gulp_loc=g
     yes| cp ~/$(echo $gulp_loc)/gulpfile.js .
@@ -2213,7 +2158,7 @@ golive() {
     live-server
 }
 
-## this script help you find x/y coordinate of a location
+## this script help you find (lat, lon) coordinate of a location
 
 gps () {
     if [ "$#" -lt 1 ]
@@ -2222,9 +2167,7 @@ gps () {
       echo "usage: $0 <adderss>"
       echo "example usage: gps Taiwan"
     fi
-
-    address=$1
-
+    local address=$1
     wget -O- -q "https://maps.googleapis.com/maps/api/geocode/json?address=$address"|\
     grep -A2 '"location"'|\
     tail -n2|\
@@ -2239,12 +2182,10 @@ function myoldmac() {
     ifconfig en1 | awk '/ether/{print $2}'
     spoof list
 }
-
 function mymac() {
     ifconfig en1 | awk '/ether/{print $2}'
     spoof list
 }
-
 function mynewmac() {
     sudo spoof randomize en0
     sudo spoof randomize en4 
@@ -2272,32 +2213,31 @@ function filex() {
 }
 
 ## This script help you reboot mysql root access
-# function mysqlboot() {}
-    ##https://gist.github.com/fallwith/987731#file-homebrew_mysql_pass_reset-txt
-    ## 0) Check Mysql Root password
-    # cat /usr/conf/mysql.conf
+function mysqlboot() {
+    #https://gist.github.com/fallwith/987731#file-homebrew_mysql_pass_reset-txt
+    # 0) Check Mysql Root password
+    cat /usr/conf/mysql.conf
     # 1) Stop Mysql
-    # /etc/init.d/mysql stop
+    /etc/init.d/mysql stop
     # 2) Start Mysql Safe
-    # mysqld_safe -skip-grant-tables &
+    mysqld_safe -skip-grant-tables &
     # 3) Start Mysql
-    # /etc/init.d/mysql start
+    /etc/init.d/mysql start
     # 4) Login as root
-    # mysql -u root -p
-    # kill `cat /mysql-data-directory/host_name.pid`
-
+    mysql -u root -p
+    kill `cat /mysql-data-directory/host_name.pid`
+}
 ## This script help creates a bootable mac usb for sierra
 ## Change usbName for different Volume.
 ## https://support.apple.com/en-us/HT201372
-
 function createUSB() {
     macVersion=Sierra
     usbName=MinionDisk
     sudo /Applications/Install\ macOS\ Sierra.app/Contents/Resources/createinstallmedia --volume /Volumes/$usbName --applicationpath /Applications/Install\ macOS\ Sierra.app --nointeraction &&say Done
 }
 
-## This script help print a template for configuration of Cmake
 function ccmake() {
+    echo "[Info] This script help print a template for configuration of Cmake"
     echo "1) Configure phase:"
     echo 'cmake -Hfoo -B_builds/foo/debug -G"Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_DEBUG_POSTFIX=d -DCMAKE_INSTALL_PREFIX=/usr'
     echo "2) Build and Install phases"
@@ -2305,7 +2245,6 @@ function ccmake() {
 }
 
 ## This script helps find all href links from a file.
-
 function findlinks() {
     sed -n 's/.*href="\([^"]*\).*/\1/p' "$@"
 }
@@ -2313,25 +2252,24 @@ function findlinks() {
 ## This script help mirror GNU Software Projects to Github
 ## https://www.gnu.org/software/software.html
 ## Prerequsite : brew install hub , git
-
 function gnu_mirror2() {
     git clone git://git.savannah.gnu.org/"$@".git
-    cd "$@"
+    cd "$@" >> /dev/null
     hub create gnu_"$@"
     git push --force --mirror https://github.com/ralic/gnu_"$@".git
-    cd ..
+    cd .. >> /dev/null
     # rm -rf "$@"
 }
-
+## [github CLI] npm install gh -g
 ## https://www.npmjs.com/package/gh
 ## http://nodegh.io/
 ## https://github.com/node-gh/gh
 #git clone https://github.com/sametmax/0bin.git
-##origin	https://github.com/Python3pkg/diveintopython3 (push)
+#origin    https://github.com/Python3pkg/diveintopython3 (push)
 
 function gitpy3 () {
-	srcgit=$(git remote -v | grep origin | grep push | awk '{print $2}')
-	owner=$(git remote -v  | grep origin |grep push | awk '{print $2}' |sed 's/https\:\/\/github.com\///' | sed 's/\/.*//g')
+    srcgit=$(git remote -v | grep origin | grep push | awk '{print $2}')
+    owner=$(git remote -v  | grep origin |grep push | awk '{print $2}' |sed 's/https\:\/\/github.com\///' | sed 's/\/.*//g')
     gitname=$(git remote -v  | grep origin| grep push | awk '{print $2}' | sed 's/https\:\/\/github.com\///' | sed 's/\//\ /g' | awk '{print $2}')
     gh re --fork $gitname --organization Python3pkg
     allpy3
@@ -2344,7 +2282,7 @@ function gitpy3 () {
   #  git commit -m "Add Travis-CI"
     git push origin
     # gh pr --submit $owner --title "Convert to Python3" --description " using : find . -name "*.py" | xargs 2to3 -w"
-	echo 'gh pr --submit $owner --title "Convert to Python3" --description " using : find . -name "*.py" | xargs 2to3-3.6 -w"'
+    echo 'gh pr --submit $owner --title "Convert to Python3" --description " using : find . -name "*.py" | xargs 2to3-3.6 -w"'
  }
 
 ## This script help remove the last character of a file, whatever it is 
@@ -2357,65 +2295,81 @@ function nofirst() {
     sed 's/^..//'  "$@" > "$@".nofirst
 }
 
-## This script help report the difference of two files
 function idf () {
-	echo "[Info] Report comparision, LEFT: GCC, RIGHT : Clang"
-	### sdiff or icdiff
-	diff --side-by-side $1 $2 > idf.report
-	cat -n idf.report | grep "|" > idf.summary
-	echo "[DIFF REPORT SUMMARY]"
-	cat idf.summary
+    echo "[Info] Report comparision, File1_Name: "$1", File2_Name :"$2
+    ### sdiff or icdiff may also works
+    diff --side-by-side $1 $2 > idf.report
+    cat -n idf.report | grep "|" > idf.summary
+    echo "[DIFF REPORT SUMMARY]"
+    cat idf.summary
 }
 
 function instabots() {
 tee install.folders <<-'EOF'
 function mv2cellars() {
-	ls -d */ > folders.here
+    ls -d */ > folders.here
     cat folders.here | awk '{print "yes|mv " $1 " /usr/local/Cellar"}' >> install.go
 }
 EOF
-	find . -type f | awk '{print "extract "$1}' > install.run
-	. install.run
-	. install.folders
-	. install.go
-	echo "Type . install.go to install in cellars"
+    find . -type f | awk '{print "extract "$1}' > install.run
+    . install.run
+    . install.folders
+    . install.go
+    echo "Type . install.go to install in cellars"
 }
 
 function bot() {
-	BOT_PATH=~/work/bottles/tmpbot/"$1"
-	mkdir -p $BOT_PATH;cd $BOT_PATH
-	echo $BOT_PATH > bot_path
-	brew info "$1" > message.txt
-	uname -ov >> message.txt
-	brew install "$@" --build-bottle  > autobot.log
-	brew upgrade "$@" --build-bottle  >> autobot.log
-	brew bottle "$@" >> autobot.log
-	brew postinstall "$@"
+    BOT_PATH=~/work/bottles/tmpbot/"$1"
+    mkdir -p $BOT_PATH;cd $BOT_PATH
+    echo $BOT_PATH > bot_path
+    brew info "$1" > message.txt
+    uname -ov >> message.txt
+    brew install "$@" --build-bottle  > autobot.log
+    brew upgrade "$@" --build-bottle  >> autobot.log
+    brew bottle "$@" >> autobot.log
+    brew postinstall "$@"
+}
+
+function forcebots() {
+    cat autobot.log | grep built | awk '{print $2'} > built.txt
+    cat built.txt | sed 's|:||g' | sed 's/\// /g' | awk '{print "forcebot "$5}' >forcebot.list
+}
+
+function forcebot() {
+    bot "$@"
+    cd /usr/local/opt/"$@" > /dev/null
+    replacetxt '"built_as_bottle":false' '"built_as_bottle":true' INSTALL_RECEIPT.json >/dev/null
+    prev > /dev/null
+    brew bottle "$@"
+    botok 
 }
 
 function botok(){
-	s1=1
-	s2=$(cat autobot.log  | grep 'bottle do'|wc -l)
-	if [ "$s1" == "$s2" ]
-	then
-		sed -i '1s/\(.*\)/[Succeed]\1/' message.txt 
-	else 
-		sed -i '1s/\(.*\)/[Failed]\1/' message.txt 
-	fi
-	brew --env >> mesage.txt
-	yes|cp -rf * ~/work/bottles
-	cd ~/work/bottles
-	gitmsg
+    local s1=1;
+    local s2=$(cat autobot.log  | grep 'bottle do'|wc -l)
+    local s3=$(cat autobot.log | grep "This formula doesn't require compiling."| wc -l )
+    local s4=$(($s2+$s3))
+    if [ $s1 == $s4 ]
+    then
+        sed -i '1s/\(.*\)/[Succeed]\1/' message.txt 
+    else 
+        sed -i '1s/\(.*\)/[Failed]\1/' message.txt 
+    fi
+    brew --env > env.txt
+    yes|cp -rf * ~/work/bottles
+    cd ~/work/bottles >>/dev/null
+    gitmsg
+    prev >>/dev/null
 }
 
 function brewbot() {
-	unlink /usr/local/bin/python
-	unset PYTHONPATH;unalias python;brew upgrade --build-bottle
-	ln -s /usr/local/bin/python3 /usr/local/bin/python
+    unlink /usr/local/bin/python
+    unset PYTHONPATH;unalias python;brew upgrade --build-bottle
+    ln -s /usr/local/bin/python3 /usr/local/bin/python
 }
 
 function autobots () {
- 	brew outdated  > tobe.bot
+    brew outdated  > tobe.bot
     wwich bot | sed '1d' > tobe.run
     wwich botok | sed '1d'>> tobe.run
     wwich gitmsg | sed '1d'>> tobe.run
@@ -2424,41 +2378,41 @@ function autobots () {
     echo '[Info]  Do you want to start auto bottles ? (yes/press enter to skip)' 
     read option 
     case $option in
-	        "yes")
-				echo '[Info] Running Autobot'
-				. tobe.run  &
-	        ;;
-	        *)
-     			echo '[Info] execute  ". tobe.run &" to start auto bottles'
-	        ;;
-	esac
+            yes)
+                echo '[Info] Running Autobot'
+                . tobe.run  &
+            ;;
+            *)
+                echo '[Info] execute  ". tobe.run &" to start auto bottles'
+            ;;
+    esac
 }
 
 function brewbottles() {
-	brew list | awk '{print "brew bottle "$1}' >bottle.list
-	. bottle.list > bottle.log
+    brew list | awk '{print "brew bottle "$1}' >bottle.list
+    . bottle.list > bottle.log
 }
 
 function brewpush() {
-	brewP="$1"
-	echo "[Usage] brewpush recipe name"
-	echo "[Alert] Please make sure you 'brew audit --new-formula <foo>' !!  (yes?)"
-	read option
-	case $option in
-	        yes)
-					brew update 
-					# required in more ways than you think (initializes the brew git repository if you don't already have it)
-					cd $(brew --repo homebrew/core)
-					# Create a new git branch for your formula so your pull request is easy to
-					# modify if any changes come up during review.
-					# git checkout -b <some-descriptive-name>
-					git add Formula/$brewP.rb
-					git commit
-	        ;;
-	        *)
-				return 0
-	        ;;
-	esac
+    local brewP="$1"
+    echo "[Usage] brewpush recipe name"
+    echo "[Alert] Please make sure you 'brew audit --new-formula <foo>' !!  (yes?)"
+    read option
+    case $option in
+            yes)
+                brew update 
+                # required in more ways than you think (initializes the brew git repository if you don't already have it)
+                cd $(brew --repo homebrew/core)
+                # Create a new git branch for your formula so your pull request is easy to
+                # modify if any changes come up during review.
+                # git checkout -b <some-descriptive-name>
+                git add Formula/$brewP.rb
+                git commit
+            ;;
+            *)
+                return 0
+            ;;
+    esac
 }
 
 
@@ -2468,111 +2422,117 @@ function gobrew() {
     else
         cd /home/linuxbrew/.linuxbrew/Library/Taps/homebrew/homebrew-core/Formula/
     fi
-    git remote set-url origin https://github.com/ralic/homebrew-core.git
+    echo git remote set-url origin https://github.com/ralic/homebrew-core.git
 }
 
 function lfgf() {
-    git remote set-url origin https://github.com/Homebrew/homebrew-core.git    
+    if [ "$(uname -s)" == "Darwin" ]; then
+        git remote set-url origin https://github.com/Homebrew/homebrew-core.git 
+    elif [ "$(uname -s)" == "Linux" ]; then
+        git remote set-url origin https://github.com/Linuxbrew/homebrew-core.git 
+    fi  
 }
 
+### MAC :Adjust Kernel to 64 bit
+# https://www.finetunedmac.com/forums/ubbthreads.php?ubb=showflat&Number=31746
+# http://www.hackaapl.com/forcing-snow-leopard-os-x-to-boot-64-bit-kernel/
 function gosystem() {
     cd /Library/Preferences/SystemConfiguration
 }
 
 function findtxt() {
-	echo "[Usage] findtxt about 'keyword' recursively in current folder"
-	echo "[Info] example : findtxt '/usr/bin/env python'"
-	echo "[Alt] brew install ack ; ack '/usr/bin/env python' "
-	echo "[Output] file name , line number , text details, result in findtxt.log"
-	grep -Rnw "$@" > findtxt.raw
-	cat findtxt.raw | sed s/:/\\t/ | sed s/:/\\t/ | grep -v Binary > findtxt.log
-	cat findtxt.log
+    echo "[Usage] findtxt about 'keyword' recursively in current folder"
+    echo "[Info] example : findtxt '/usr/bin/env python'"
+    echo "[Alt] brew install ack ; ack '/usr/bin/env python' "
+    echo "[Output] file name , line number , text details, result in findtxt.log"
+    grep -Rnw "$@" > findtxt.raw
+    cat findtxt.raw | sed s/:/\\t/ | sed s/:/\\t/ | grep -v Binary > findtxt.log
+    cat findtxt.log
 }
 
 function cleantxt() {
-	echo "[Info]~/Library/Application Support/??? contains the catalog with plugins."
-	echo "[Info]~/Library/Preferences/??? contains the rest of the configuration settings."
-	echo "[Info]~/Library/Caches/??? contains data caches, logs, local history, etc. (large size)"
-	echo "[Info]~/Library/Logs/??? contains logs."
-	rm findtxt.*
-}
-
-function gftype() {
-	echo "[Info] This support you to grep certian filename suffix"
-	echo "[Usage] 'find . | gftype log' to find all *.log"
-	grep ".*\."$1"$"
+    echo "[Info]~/Library/Application Support/??? contains the catalog with plugins."
+    echo "[Info]~/Library/Preferences/??? contains the rest of the configuration settings."
+    echo "[Info]~/Library/Caches/??? contains data caches, logs, local history, etc. (large size)"
+    echo "[Info]~/Library/Logs/??? contains logs."
+    rm findtxt.*
 }
 
 function replacetxt() {
-	echo "[Usage] replacetxt  'old' 'new' 'filename'"
-	echo "[Info] example : findtxt '/usr/bin/env python'"
+    echo "[Usage] replacetxt  'old' 'new' 'filename'"
+    echo "[Info] example : findtxt '/usr/bin/env python'"
     local search=$1
     local replace=$2
     local filename=$3
     # Note the double quotes
     sed -i "s/${search}/${replace}/g" $filename
 }
-
-function gitcopy() {	
-	git clone --recursive --depth=50 --branch=master "$@"
+function gitcopy() {    
+    git clone --recursive --depth=50 --branch=master "$@"
 }
-
+function gitpushall() {
+    echo "[Info] This cript helps you push all submodules using git."
+    git push --recurse-submodules=on-demand "$@"
+}
 function gitmsg() {
-	git add *;git commit -F message.txt;git push
+    git add *;git commit -F message.txt;git push
 }
 function gitsend() {
-	git commit -F .git/COMMIT_EDITMSG;git push
+    git commit -F .git/COMMIT_EDITMSG;git push
 }
-
 function gitarget() {
-	echo "[Usage] 'gitarget GithubTreeUrl', here the commited url is from browing github"
-	echo "[Example] gitarget https://github.com/ralic/python3.62mac/tree/5394bbc291eb816e7cb05a195ed93b394ad14daf"
-	echo $1 | sed 's/\/tree\/*/ /' | sed "s/https:\/\/github.com\///g" |sed 's/\// /' > git.wanted
-	## $1 user , $2 repo , $3 commit
-	cat git.wanted | awk '{print "git clone https://github.com/"$1"/"$2";cd "$2";git checkout "$3}' > git.take
-	. git.take
+    echo "[Usage] 'gitarget GithubTreeUrl', here the commited url is from browing github"
+    echo "[Example] gitarget https://github.com/ralic/python3.62mac/tree/5394bbc291eb816e7cb05a195ed93b394ad14daf"
+    echo $1 | sed 's/\/tree\/*/ /' | sed "s/https:\/\/github.com\///g" |sed 's/\// /' > git.wanted
+    ## $1 user , $2 repo , $3 commit
+    cat git.wanted | awk '{print "git clone https://github.com/"$1"/"$2";cd "$2";git checkout "$3}' > git.take
+    . git.take
 }
 
 function gitcut() {
-	echo "[Info] Cutting off commit from history "
-	git rebase -i "$@"
+    echo "[Info] Cutting off commit from history "
+    git rebase -i "$@"
 }
 
 function gitgetsubs() {
-	echo "[Info] Find all submodules directorys : cat submodules.txt"
-	## Remove head and tails , ## Remove 1st line
-	find . -name .git | grep -v '\./.git' | sed 's/^..\(.*\).....$/\1/'  > submodules.txt
-	cat submodules.txt 	| awk '{print "cat "$1"/.git/config| grep url | sed -n 1p "}' > submodules.run
-	. submodules.run |sed 's/^.//'> submodules.urls
-	cat submodules.urls | awk '{print "git submodule add "$3}'> submodules.adder
-	cat submodules.txt | awk '{print "[submodule \""$1"\"],path="$1}' > submodules.path
-	paste -d"," submodules.path submodules.urls > submodules.txt
-	tr , '\n' < submodules.txt > .gitmodules
-	. submodules.adder
-	rm submodules.*
-	cat .gitmodules
-	git submodule
-	git submodule init
-	git submodule sync --recursive
-	git add .gitmodules
+    echo "[Info] Find all submodules directorys : cat submodules.txt"
+    ## Remove head and tails , ## Remove 1st line
+    find . -name .git | grep -v '\./.git' | sed 's/^..\(.*\).....$/\1/'  > submodules.txt
+    cat submodules.txt  | awk '{print "cat "$1"/.git/config| grep url | sed -n 1p "}' > submodules.run
+    . submodules.run |sed 's/^.//'> submodules.urls
+    cat submodules.urls | awk '{print "git submodule add "$3}'> submodules.adder
+    cat submodules.txt | awk '{print "[submodule \""$1"\"],path="$1}' > submodules.path
+    paste -d"," submodules.path submodules.urls > submodules.txt
+    tr , '\n' < submodules.txt > .gitmodules
+    . submodules.adder
+    rm submodules.*
+    cat .gitmodules
+    git submodule
+    git submodule init
+    git submodule sync --recursive
+    git add .gitmodules
 }
 
 function gitupdates() {
-	# git submodule
-	# git submodule sync --recursive;
-	# git submodule update --recursive 
-	git submodule foreach git pull
+    # git submodule
+    # git submodule sync --recursive;
+    # git submodule update --recursive 
+    git submodule foreach git pull
 }
 
 function gitdf() {
-	echo "## This script helps you compare new commmit and previous commit in git"
-	echo "If you dont' agree with this change, use 'git reset HEAD' to reverse the change."
-	git diff HEAD^ HEAD  ## or git show
+    echo "## This script helps you compare new commmit and previous commit in git"
+    echo "If you dont' agree with this change, use 'git reset HEAD' to reverse the change."
+    git diff HEAD^ HEAD  ## or git show
 }
 
 function gitadm() { 
-	echo "## This script helps you add modified files only on git, good for python packages upgrade"
-	git ls-files --modified | xargs git add
+    echo "## This script helps you add files into git, default '--modified'"
+    if [[ $# -eq 0 ]] ; then
+        git ls-files --modified | xargs git add
+    else 
+        git ls-files "$@" | xargs git add
+    fi
 }
 
 ## This script help backup your current git 
@@ -2587,27 +2547,24 @@ function gitrestart() {
     git reset --hard origin/master
     echo "[Info]Do you want to remove 'local/develop' branch ? (yes / or  Press 'enter' to skip)"
     read option
-	case $option in
-	        yes)
-				git branch -D develop
-	        ;;
-	        *)
-	            echo "[Info]enter "$folder" to cleanup records."
-	        ;;
-	esac
+    case $option in
+            yes)
+                git branch -D develop
+            ;;
+            *)
+                echo "[Info]enter "$folder" to cleanup records."
+            ;;
+    esac
 }
-
-## This cript helps you push all submodules using git.
-alias gitpushall="git push --recurse-submodules=on-demand"
 
 ## REF : https://stackoverflow.com/questions/2862590/how-to-replace-master-branch-in-git-entirely-from-another-branch
 
 function gitdmaster() {
-	echo '[Info]  This script helps to replace master from development'
-	git checkout develop
-	git merge -s ours master
-	git checkout master
-	git merge develop
+    echo '[Info]  This script helps to replace master from development'
+    git checkout develop
+    git merge -s ours master
+    git checkout master
+    git merge develop
 }
 
 function myhg2git() {
@@ -2638,7 +2595,7 @@ function svn2git() {
 ## This script helps unarchive .deb files from debian.org.
 
 function nodebt() {
-	ar -x path/to/deb/"$@".deb
+    ar -x path/to/deb/"$@".deb
 }
 
 ## This script helps to creat a tar.xz for a folder.
@@ -2657,57 +2614,56 @@ function utar() {
 ### Patching mac default compress to be .tar.xz 
 # alias compress=getar
 function xbench() {
-	echo $'[Info] This script benchmarks tar.xz,tar.xz4,tar.lz4 speed, ex. xbench "Folder name"\n'
-	echo $'[Info] lz4dir score'
-	time lz4dir $1
-	echo $'[Info] xz4dir score'
-	time xz4dir $1
-	echo $'[Info] xzdir score'
-	time getar $1
-	mkdir -p xbenchTest  >>  /dev/null
-	mv $1.tar.* ./xbenchTest  >>  /dev/null
-	cd xbenchTest >>  /dev/null
-	time unlz4dir ./$1.tar.lz4;rm -rf ./$1; 
-	time unxz4dir ./$1.tar.xz4;rm -rf ./$1 
-	echo "'.xz/$1' -> './$1'"
-	time utar ./$1.tar.xz;rm -rf ./$1 
-	cd ..  >>  /dev/null
-	rm -rf xbenchTest
+    echo $'[Info] This script benchmarks tar.xz,tar.xz4,tar.lz4 speed, ex. xbench "Folder name"\n'
+    echo $'[Info] lz4dir score'
+    time lz4dir $1
+    echo $'[Info] xz4dir score'
+    time xz4dir $1
+    echo $'[Info] xzdir score'
+    time getar $1
+    mkdir -p xbenchTest  >>  /dev/null
+    mv $1.tar.* ./xbenchTest  >>  /dev/null
+    cd xbenchTest >>  /dev/null
+    time unlz4dir ./$1.tar.lz4;rm -rf ./$1; 
+    time unxz4dir ./$1.tar.xz4;rm -rf ./$1 
+    echo "'.xz/$1' -> './$1'"
+    time utar ./$1.tar.xz;rm -rf ./$1 
+    cd ..  >>  /dev/null
+    rm -rf xbenchTest
 }
 # echo  $(($PACORES - 1))
 function zipdir() { 
-	zip -r "$1".zip "$1" > /dev/null
-	du -sh $1
-	du -sh $1.zip
+    zip -r "$1".zip "$1" > /dev/null
+    du -sh $1
+    du -sh $1.zip
  }          
 # zipdir:         To create a ZIP archive of a folder
 function xz4dir() {
-	find $1 -type d -print0| xargs -n 1 -P $PACORES -0 -I'{}' mkdir -p './.xz4/{}' 
-	find $1 -type f | ffilter | xargs -n 1 -P $PACORES xz -e9k
-	find $1 -name '*.xz' -print0 | xargs -n 1 -P $PACORES -0 -I'{}'  mv  '{}' './.xz4/{}'
-	tar -cf $1.tar.xz4 .xz4/$1
-	rm -rf .xz4
+    find $1 -type d -print0| xargs -n 1 -P $PACORES -0 -I'{}' mkdir -p './.xz4/{}' 
+    find $1 -type f | ffilter | xargs -n 1 -P $PACORES xz -e9k
+    find $1 -name '*.xz' -print0 | xargs -n 1 -P $PACORES -0 -I'{}'  mv  '{}' './.xz4/{}'
+    tar -cf $1.tar.xz4 .xz4/$1
+    rm -rf .xz4
     du -sh $1
     du -sh $1.tar.xz4
 }
 
 function unxz4dir() {
-	tar -xf $1
-	find .xz4 -type f |ffilter| xargs -n 1 -P $PACORES xz -d 
-	mv .xz4/* . 
-	rm -rf .xz4
+    tar -xf $1
+    find .xz4 -type f |ffilter| xargs -n 1 -P $PACORES xz -d 
+    mv .xz4/* . 
+    rm -rf .xz4
 }
-
 
 ## This ffilter  will take care of escaping the spaces and quotes
 ## Sometimes find  if -print0 not working
 function ffilter() {
 ##  | sed -e "s/'/\\\'/g" -e 's/"/\\"/g' -e 's/ /\\ /g' 
-	sed -e "s/'/\\\'/g" -e 's/"/\\"/g' -e 's/ /\\ /g' 
+    sed -e "s/'/\\\'/g" -e 's/"/\\"/g' -e 's/ /\\ /g' 
 }
 
 function lz4dir() {
-	find $1 -type d -print0 | xargs -n 1 -P $PACORES -0 -I'{}' mkdir -p './.lz4/{}'
+    find $1 -type d -print0 | xargs -n 1 -P $PACORES -0 -I'{}' mkdir -p './.lz4/{}'
     find $1 -type f | ffilter | xargs -n 1 -P $PACORES  lz4 -9m
     find $1 -name '*.lz4' -print0  |  xargs -n 1 -P $PACORES -0 -I'{}' mv '{}' './.lz4/{}'
     tar -cf $1.tar.lz4 .lz4/$1 
@@ -2716,23 +2672,23 @@ function lz4dir() {
     du -sh $1.tar.lz4
 }
 function unlz4dir() {
-	tar -xf $1
-	find .lz4 -type f  | ffilter |  xargs -n 1 -P $PACORES unlz4 -m --rm
-	mv .lz4/* . 
-	rm -rf .lz4
+    tar -xf $1
+    find .lz4 -type f  | ffilter |  xargs -n 1 -P $PACORES unlz4 -m --rm
+    mv .lz4/* . 
+    rm -rf .lz4
 }
 function rsynctype() {
-	echo '[Info] Copy only certain file extension to new directory Args :"$1" = type , "$2"= directory '
-	echo "[Question] Run the command? (yes / others for skip)"
-	read option
-        case $option in 
-             yes) 
-			rsync -rv --include '*/' --include '*.$1' --exclude '*' --prune-empty-dirs $2 rsync_type
-            ;;      
-           *) 
-			echo "[Command]rsync -rv --include '*/' --include '*.$1' --exclude '*' --prune-empty-dirs $2 rsync_type"
-            ;;
-        esac
+    echo '[Info] Copy only certain file extension to new directory Args :"$1" = type , "$2"= directory '
+    echo "[Question] Run the command? (yes / others for skip)"
+    read option
+    case $option in 
+         yes) 
+        rsync -rv --include '*/' --include '*.$1' --exclude '*' --prune-empty-dirs $2 rsync_type
+        ;;      
+       *) 
+        echo "[Command]rsync -rv --include '*/' --include '*.$1' --exclude '*' --prune-empty-dirs $2 rsync_type"
+        ;;
+    esac
 }
 
 ## This script helps cleaning brew cache.
@@ -2763,60 +2719,60 @@ EOF
 
 function multijobs() { 
 tee multijobs.sh <<-'EOF'
-	echo "[Info] default job file name = hello.txt"
-	if [[ $# -eq 0 ]] 
-		then
-			filename=hello.txt ## commands TBD
-		else
-			filename=$1
-	fi
-	folder=runners  ## runners to remmember where the runner is
-	begin=1 ## Beginning lines, default : 1
-	range=$(wc $filename -l | awk '{print $1}') ## threshold for TBD files.
-	processX=10 ## create how many sub-processes
-	sleeper=1 ## sleeper how many secs
-	count=0;
-	mkdir $folder
-	for ((i=$begin;i<=range;i++)); do
-	        if [ $((i%processX)) -eq 0 ]
-	            then
-	                # cline $((i)) $filename 
-	                cline $((i)) $filename > $folder/run.$((i))
-	                . $folder/run.$((i)) &
-	                echo "[Info] Line: "$count , "Sleep " $sleeper " secs"
-	                sleep $sleeper
-	        	else
-	                #cline $((i)) $filename
-	                cline $((i)) $filename > $folder/run.$((i))
-	                . $folder/run.$((i)) &
-	        fi
-	        count=$((count+1))
-	done
-	echo "[INFO] Process list -- "$filename "completed"
-	ls $folder
-	echo "[INFO] Say ((yes)) to remove temp folder:"
-	read option
-	case $option in
-	        yes)
-	            rm $folder/run.*
-	            rmdir $folder
-	        ;;
-	                *)
-	            echo "[Info]enter "$folder" to cleanup records."
-	        ;;
-	esac
+    echo "[Info] default job file name = hello.txt"
+    if [[ $# -eq 0 ]] 
+        then
+            filename=hello.txt ## commands TBD
+        else
+            filename=$1
+    fi
+    folder=runners  ## runners to remmember where the runner is
+    begin=1 ## Beginning lines, default : 1
+    range=$(wc $filename -l | awk '{print $1}') ## threshold for TBD files.
+    processX=10 ## create how many sub-processes
+    sleeper=1 ## sleeper how many secs
+    count=0;
+    mkdir $folder
+    for ((i=$begin;i<=range;i++)); do
+            if [ $((i%processX)) -eq 0 ]
+                then
+                    # cline $((i)) $filename 
+                    cline $((i)) $filename > $folder/run.$((i))
+                    . $folder/run.$((i)) &
+                    echo "[Info] Line: "$count , "Sleep " $sleeper " secs"
+                    sleep $sleeper
+                else
+                    #cline $((i)) $filename
+                    cline $((i)) $filename > $folder/run.$((i))
+                    . $folder/run.$((i)) &
+            fi
+            count=$((count+1))
+    done
+    echo "[INFO] Process list -- "$filename "completed"
+    ls $folder
+    echo "[INFO] Say ((yes)) to remove temp folder:"
+    read option
+    case $option in
+            yes)
+                rm $folder/run.*
+                rmdir $folder
+            ;;
+                    *)
+                echo "[Info]enter "$folder" to cleanup records."
+            ;;
+    esac
 EOF
-	
-	chmod 700 multijobs.sh
+    
+    chmod 700 multijobs.sh
 
-	echo "[Info] Generated multijob runner"
-	echo "[Info] ex: ./multijobs jobs.file "
-	echo "filename = hello.txt ## @param filename to run"
-	echo "begin=1 ## Beginning line"
-	echo "range=@endofline ##  @param Track to the last line of file"
-	echo "processX=10 ## @param how many sub-processes in a batch"
-	echo "sleeper=1 ## @param  how many secs in next batch run"
-	echo "count=0;"
+    echo "[Info] Generated multijob runner"
+    echo "[Info] ex: ./multijobs jobs.file "
+    echo "filename = hello.txt ## @param filename to run"
+    echo "begin=1 ## Beginning line"
+    echo "range=@endofline ##  @param Track to the last line of file"
+    echo "processX=10 ## @param how many sub-processes in a batch"
+    echo "sleeper=1 ## @param  how many secs in next batch run"
+    echo "count=0;"
 }
 
 ### List all npm packages with only one level of depth
@@ -2827,10 +2783,10 @@ alias ng1="npm list -g --depth=1"
 ## git clone https://github.com/ralic/cellar-backup
 
 function rebrew () {
-	unset PYTHONPATH
+    unset PYTHONPATH
     brew list | grep -v gettext | grep -v gcc| grep -v llvm| xargs brew deps --tree
     brew list | xargs brew reinstall --build-bottle
-	brew upgrade
+    brew upgrade
     ## --overwrite --force 
 }
 
@@ -2838,7 +2794,6 @@ function relinkbrew () {
    ## Remove --force
    brew list | xargs brew link --overwrite  | grep Warning | grep keg-only
 }
-
 
 function brewtree () {
     brew upgrade
@@ -2853,96 +2808,88 @@ function allpy3() {
     find . -name '*.bak' | xargs  rm
 }
 
-
 ## This script helps upgrading all installed python3 packages.
 function repip3() {
-	pip3 list |awk '{print "echo [Info]pip3 install --upgrade "$1";pip3 install --upgrade "$1}' > pip3.tmp
-	### some packages may gets downgraded 
-	cat pip3.tmp |  grep -vF "echo [Info]pip3 install --upgrade azure;pip3 install --upgrade azure"> pip3.update
-	rm pip3.tmp
-	echo "pip3 install --upgrade py4j jupyter bleach" >> pip3.update 
-	echo "rm -rf ~/Library/Caches/pip" >> pip3.update
-	. pip3.update
+    pip3 list |awk '{print "echo [Info]pip3 install --upgrade "$1";pip3 install --upgrade "$1}' > pip3.tmp
+    ### some packages may gets downgraded 
+    cat pip3.tmp |  grep -vF "echo [Info]pip3 install --upgrade azure;pip3 install --upgrade azure"> pip3.update
+    rm pip3.tmp
+    echo "pip3 install --upgrade py4j jupyter bleach" >> pip3.update 
+    echo "rm -rf ~/Library/Caches/pip" >> pip3.update
+    . pip3.update
 }
 
 ## This script generates hello_1~ hello_100 into hello.txt
-
 function hi100() {
-	 for i in {1..100};do echo "echo "hi_$((i)) >> hello.txt;done
-	 cat hello.txt
+     for i in {1..100};do echo "echo "hi_$((i)) >> hello.txt;done
+     cat hello.txt
 }
 
 ## Find only executables
 ## This sciprt help search for all executables
-
 function findexe() {
-	 find . -executable -type f | xargs file > execfile.log;
-	 cat execfile.log
+     find . -executable -type f | xargs file > execfile.log;
+     cat execfile.log
 }
 
 ## This script shows you example how to parallel ping differnt servers
-
 function pping() {
-	 parallel -j0 ping -nc 3 ::: qubes-os.org gnu.org freenetproject.org
-	 parallel --help
+     parallel -j0 ping -nc 3 ::: qubes-os.org gnu.org freenetproject.org
+     parallel --help
 }
 
 ## This function helps you genenrate a text file without editor
 ## USAGE : teec "filename" 
-
 alias teec="echo '[Info] Generate a excutable or readable text file';echo '[Info] Type EOF to end the shell';tee $1 <<-'EOF'"
 
 ### Replacing orginal Mac build 
-
 function ignu7() {
     alias ld=/usr/local/bin/ld 
-	alias gcc-ar=gcc-ar-7
-	alias gcc-nm=gcc-nm-7
-	alias gcc-ranlib=gcc-ranlib-7
-	alias nm=gnm
-	alias nm=gcc-nm-7
-	alias ranlib=gcc-ranlib-7
-	alias gcov=gcov-7
-	alias gcov-dump=gcov-dump-7
-	alias gcov-tool=gcov-tool-7
-	alias c++=c++-7
-	alias cpp=cpp-7
-	alias gcc="gcc-7 -Ofast"
-	alias g++=g++-7
-	alias fortran=gfortrain
-	alias libtoolize=glibtoolize
-	alias libtool=glibtool
-	alias ar=gar
-	alias grep=ggrep --color=always
-	alias sed=gsed
+    alias gcc-ar=gcc-ar-7
+    alias gcc-nm=gcc-nm-7
+    alias gcc-ranlib=gcc-ranlib-7
+    alias nm=gnm
+    alias nm=gcc-nm-7
+    alias ranlib=gcc-ranlib-7
+    alias gcov=gcov-7
+    alias gcov-dump=gcov-dump-7
+    alias gcov-tool=gcov-tool-7
+    alias c++=c++-7
+    alias cpp=cpp-7
+    alias gcc="gcc-7 -Ofast"
+    alias g++=g++-7
+    alias fortran=gfortrain
+    alias libtoolize=glibtoolize
+    alias libtool=glibtool
+    alias ar=gar
+    alias grep=ggrep --color=always
+    alias sed=gsed
 }
 
-	
 function unlikeg() {
     unalias ld
-	unalias gcc-ar
-	unalias gcc-nm
-	unalias gcc-ranlib
-	unalias nm
-	unalias ranlib
-	unalias gcov
-	unalias gcov-dump
-	unalias gcov-tool
-	unalias c++
-	unalias cpp
-	unalias gcc
-	unalias g++
-	unalias fortran
-	unalias libtoolize
-	unalias libtool
-	unalias ar
-	unalias tar
-	unalias grep
-	unalias sed
+    unalias gcc-ar
+    unalias gcc-nm
+    unalias gcc-ranlib
+    unalias nm
+    unalias ranlib
+    unalias gcov
+    unalias gcov-dump
+    unalias gcov-tool
+    unalias c++
+    unalias cpp
+    unalias gcc
+    unalias g++
+    unalias fortran
+    unalias libtoolize
+    unalias libtool
+    unalias ar
+    unalias tar
+    unalias grep
+    unalias sed
 }
 
 ## NOTE :
-## It's ok to replace gcc c++ by gcc-7
 alias jp3="python3 /usr/local/lib/python3.6/site-packages/jupyter.py notebook"
 # export PATH="/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS6.1.sdk/usr/include/:$PATH"
 export PATH="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/4.2/include:$PATH"
@@ -2989,53 +2936,52 @@ alias mvp='mvn -version'
 
 ### GLOBALS ###
 function macdev() {
-	CPPFLAGS="-I/usr/include/ -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include"
-	ARCHFLAGS="-isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk"
-	# LDFLAGS="-L/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib -L/usr/lib"
-	LD_LIBRARY_PATH="/Applications/Xcode.app/Contents/Developer/usr/lib/:$LD_LIBRARY_PATH"
-	PATH="/Applications/Xcode.app/Contents/Developer/usr/bin/:$PATH"
-	getflags
+    CPPFLAGS="-I/usr/include/ -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include"
+    ARCHFLAGS="-isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk"
+    # LDFLAGS="-L/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib -L/usr/lib"
+    LD_LIBRARY_PATH="/Applications/Xcode.app/Contents/Developer/usr/lib/:$LD_LIBRARY_PATH"
+    PATH="/Applications/Xcode.app/Contents/Developer/usr/bin/:$PATH"
+    getflags
 }
 
 function sublin(){
-echo "[Info] sublin, Function to install sublime editor CLI EDITOR"
-echo "
-[Info] Sublime support for debian based linux
-sudo ln -s /opt/sublime/sublime_text /usr/bin/subl
-echo 'deb https://download.sublimetext.com/ apt/stable/' | sudo tee /etc/apt/sources.list.d/sublime-text.list
-wget -qO - https://download.sublimetext.com/sublimehq-pub.gpg | sudo apt-key add -
-sudo apt-get update ; sudo apt-get install sublime-text
-"
-if [ $(cat /usr/local/bin/subl  | wc -l) -ne 2 ] ; then 
-		if [ "$(uname -s)" == "Linux" ]; then
-				tee /usr/local/bin/subl <<-'EOF'
-			#!/bin/bash
-			/usr/bin/subl "$@"
-		EOF
-		elif [ "$(uname -s)" == "Darwin" ]; then
-					tee /usr/local/bin/subl <<-'EOF'
-			#!/bin/bash
-			'/Applications/Sublime Text.app/Contents/MacOS/Sublime Text' "$@"
+	echo "[Info] sublin, Function to install sublime editor as CLI EDITOR"
+	echo "
+	[Info] Sublime support for debian based linux
+	sudo ln -s /opt/sublime/sublime_text /usr/bin/subl
+	echo 'deb https://download.sublimetext.com/ apt/stable/' | sudo tee /etc/apt/sources.list.d/sublime-text.list
+	wget -qO - https://download.sublimetext.com/sublimehq-pub.gpg | sudo apt-key add -
+	sudo apt-get update ; sudo apt-get install sublime-text"
+	if [ $(cat /usr/local/bin/subl  | wc -l) -ne 2 ] ; then 
+	        if [ "$(uname -s)" == "Linux" ]; then
+	                tee /usr/local/bin/subl <<-'EOF'
+	            #!/bin/bash
+	            /usr/bin/subl "$@"
 			EOF
-		fi
-fi
-chmod 500 /usr/local/bin/subl 
-echo "--- Installed /usr/local/bin/subl ----"
+	        elif [ "$(uname -s)" == "Darwin" ]; then
+	                    tee /usr/local/bin/subl <<-'EOF'
+	             #!/bin/bash
+	             '/Applications/Sublime Text.app/Contents/MacOS/Sublime Text' "$@"
+			EOF
+	        fi
+	fi
+	chmod 500 /usr/local/bin/subl 
+	echo "--- Installed /usr/local/bin/subl ----"
 }
 
 function getflags() {
-	echo "________________________________________________________________________________"
-	echo -e "COMPILERS: @FC=" $FC "@CC="$CC "@CPP=" $CPP "@CXX=" $CXX "@CXXCPP=" $CXXCPP 
-	echo -e "@ARCHFLAGS=$ARCHFLAGS \n@CFLAGS=$CFLAGS \n@FFLAGS=$FFLAGS \n@LDFLAGS=$LDFLAGS \n@CPPFLAGS=$CPPFLAGS"
+    echo "________________________________________________________________________________"
+    echo -e "COMPILERS: @FC=" $FC "@CC="$CC "@CPP=" $CPP "@CXX=" $CXX "@CXXCPP=" $CXXCPP 
+    echo -e "@ARCHFLAGS=$ARCHFLAGS \n@CFLAGS=$CFLAGS \n@FFLAGS=$FFLAGS \n@LDFLAGS=$LDFLAGS \n@CPPFLAGS=$CPPFLAGS"
 }
 
 function linkopts() {
-	NEXTLIB="$@"
-	OPT_PREFIX=$OPT_PREFIX
-	export LDFLAGS="-L$OPT_PREFIX/$NEXTLIB/lib $LDFLAGS"
-	export CPPFLAGS="-I$OPT_PREFIX/$NEXTLIB/include $CPPFLAGS"
-	export PATH="$OPT_PREFIX/$NEXTLIB/include:$PATH"
-	# getflags
+    NEXTLIB="$@"
+    OPT_PREFIX=$OPT_PREFIX
+    export LDFLAGS="-L$OPT_PREFIX/$NEXTLIB/lib $LDFLAGS"
+    export CPPFLAGS="-I$OPT_PREFIX/$NEXTLIB/include $CPPFLAGS"
+    export PATH="$OPT_PREFIX/$NEXTLIB/include:$PATH"
+    # getflags
 }
 
 
@@ -3048,7 +2994,7 @@ function linkopts() {
 
 # LDFLAGS="-L/usr/local/lib -L$(brew --prefix e2fsprogs)/lib $LDFLAGS"
 declare -a liblist=(
-    "openssl" "xz" "zlib" "bison" #"bzip2" 
+    "gcc" "openssl" "openssl@1.1" "xz" "zlib" "bison" #"bzip2" 
     "gmp" "mpfr" "llvm" "ncurses"
     "boost" "boost-mpi" "boost-python" "open-mpi" "tbb"
     "gettext"  #"readline"
@@ -3084,21 +3030,21 @@ function bootlibs {
 
 
 function keylibs() {
-	export LDFALGS="-L$BREW_PREFIX/lib $LDFLAGS"
-	export CPPFLAGS="-I$BREW_PREFIX/include $CPPFLAGS"
-	export LDFLAGS="-L$OPT_PREFIX/readline/lib $LDFLAGS"
-	export CPPFLAGS="-I$OPT_PREFIX/readline/include/readline $CPPFLAGS"
-	export LINKFLAGS="$CPPFLAGS"
+    export LDFALGS="-L$BREW_PREFIX/lib $LDFLAGS"
+    export CPPFLAGS="-I$BREW_PREFIX/include $CPPFLAGS"
+    export LDFLAGS="-L$OPT_PREFIX/readline/lib $LDFLAGS"
+    export CPPFLAGS="-I$OPT_PREFIX/readline/include/readline $CPPFLAGS"
+    export LINKFLAGS="$CPPFLAGS"
 }
 
 function morelibs(){
-	linkopts portable-expat
-	linkopts portaudio
-	linkopts libarchive
-	linkopts qt
-	linkopts metis
-	linkopts opencv
-	linkopts cython
+    linkopts portable-expat
+    linkopts portaudio
+    linkopts libarchive
+    linkopts qt
+    linkopts metis
+    linkopts opencv
+    linkopts cython
 }
 setcc
 keylibs
@@ -3116,4 +3062,4 @@ export PATH="$BREW_PREFIX/bin;$BREW_PREFIX/sbin:$BREW_PREFIX/lib;$BREW_PREFIX/in
 export MANPATH="$BREW_PREFIX:/share/man:$MANPATH"
 export INFOPATH="$BREW_PREFIX/share/info:$INFOPATH"
 export PKG_CONFIG_PATH="$BREW_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
-
+export PATH="$PATH:/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/opt/aws/bin:/usr/local/bin"
