@@ -49,7 +49,7 @@
 ##                   -- It's ok to replace gcc c++ by gcc-7
 
 alias xxargs='xargs -n 1 -P $PACORES'
-CCSET="clang"
+CCSET="mpicc"
 function setcc() {
     echo "PACORES="$PACORES
     echo "[Info] setcc ,Function to change compiler settings. CCSET="$CCSET
@@ -66,7 +66,7 @@ function setcc() {
         ## MPI version ##
             FC="mpifort"; CC="mpicc"; CXX="mpicxx" ; CPP="mpicc -E"  ;CXXCPP="clang -E"  
             MPIFC="mpifort";MPICC="mpicc";MPICPP="mpicc -E" ;MPICXX="mpicxx"
-            #HOMEBREW_CC="mpicc"; HOMEBREW_CXX="mpicxx"
+            HOMEBREW_CC="mpicc"; HOMEBREW_CXX="mpicxx"
         ;;
         "gcc") ## GCC7 ##
             FC="gfortran";  CC="gcc" ;CXX="gcc" ; 
@@ -78,7 +78,7 @@ function setcc() {
     esac
     # brew --env
 }
-export MAKEJOBS="-j8"
+export MAKEJOBS="-j16"
 alias cgrep="grep --color=always"
 
 # export HOMEBREW_BUILD_FROM_SOURCE=1
@@ -112,9 +112,9 @@ fi
 if [ "$(uname -s)" == "Darwin" ]; then
     export TEXT_Editor=subl #/usr/bin/nano || /usr/bin/vi
     export EDITOR=subl # /usr/bin/nano || /usr/bin/vi
-    # MACOSX_DEPLOYMENT_TARGET=$(sw_vers | grep ProductVersion | awk '{print $2}')
+    MACOSX_DEPLOYMENT_TARGET=$(sw_vers | grep ProductVersion | awk '{print $2}')
     # export MACOSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET"
-    export MACOSX_DEPLOYMENT_TARGET=10.1
+    export MACOSX_DEPLOYMENT_TARGET=10.5
     PACORES=$(sysctl hw | grep hw.ncpu | awk '{print $2}')
     PACORES=$(( $PACORES * 2 ))
      # f:            Opens current directory in MacOS Finder
@@ -178,13 +178,6 @@ export FFLAGS="$CFLAGS  $MATHFLAGS "
 # DEBUGFLAG="-g"
 alias cpx="cc -c $LDFLAGS $DEBUGFLAG $CFLAGS -Ofast -flto"
 
-### CMAKE FLAGS SUPPORT
-export CMAKE_CXX_FLAGS="-Wall -Ofast $MATHFLAGS" 
-export CMAKE_CFLAGS="-Wall -Ofast $CFLAGS $MATHFLAGS" 
-export CMAKE_C_FLAGS="-Wall -Ofast  $MATHFLAGS" 
-export CMAKE_CXX_FLAGS_DEBUG="-Wall -Ofast $MATHFLAGS"
-export PROJ_LIB="~/work/proj"
-
 export ARCHFLAGS="-march=native"
 # -arch x86-64 -arch i386  -Xarch_x86_64
 
@@ -231,6 +224,7 @@ export OPENBLAS_NUM_THREADS=32
 ## brew reinstall llvm -v --all-targets --rtti --shared --with-asan --with-clang --use-clang
 export LDFLAGS="-L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib $LDFLAGS"
 export CPPFLAGS="-I/usr/local/opt/llvm/include -I/usr/local/opt/llvm/include/c++/v1/ $CPPFLAGS"
+export 
 
 ## rJava Support
 #R CMD javareconf JAVA_CPPFLAGS=-I/System/Library/Frameworks/JavaVM.framework/Headers
@@ -994,9 +988,9 @@ function hcl() {
 export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
 
 function cmacabi() { 
-	## Check whether you are booting in 64bit firmware
-	## http://www.hackaapl.com/forcing-snow-leopard-os-x-to-boot-64-bit-kernel/
-	ioreg -l -p IODeviceTree | grep firmware-abi
+    ## Check whether you are booting in 64bit firmware
+    ## http://www.hackaapl.com/forcing-snow-leopard-os-x-to-boot-64-bit-kernel/
+    ioreg -l -p IODeviceTree | grep firmware-abi
 }
 
 function ccpu () {
@@ -1735,12 +1729,15 @@ function myip3() {
 ## Author: Ralic Lo
 
 function myipv6() {
-     # [Linux] 
-     # ip -6 addr show eth0| grep inet6 | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/'
+    if [ "$(uname -s)" == "Darwin" ]; then
+        ip -6 addr show en0 | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/'
+    else
+      ip -6 addr show eth0| grep inet6 | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/'
+    fi
+    echo git remote set-url origin https://github.com/ralic/homebrew-core.git
      #[Linux] 
      # ip -6 addr show en0| grep inet6 | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/'
-    ip -6 addr show en0 | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/'
-}
+ }
 
 
 
@@ -1757,9 +1754,9 @@ function surl() {
 ## This script helps to provide a link to your server using ipv6.
 ## It works under a router.
 function linkme() {
-    echo open https://[$(myipv6)]
-    surl https://[$(myipv6)]
-    open https://[$(myipv6)] 
+    echo open https://[$(myipv6 | cline 1)]
+    surl https://[$(myipv6 | cline 1)]
+    open https://[$(myipv6 | cline 1)] 
 }
 
 function googlink() {
@@ -2319,9 +2316,8 @@ EOF
 }
 
 function bot() {
-    BOT_PATH=~/work/bottles/tmpbot/"$1"
+    local BOT_PATH=~/work/bottles/tmpbot/"$1"
     mkdir -p $BOT_PATH;cd $BOT_PATH
-    echo $BOT_PATH > bot_path
     brew info "$1" > message.txt
     uname -ov >> message.txt
     brew install "$@" --build-bottle  > autobot.log
@@ -2337,29 +2333,36 @@ function forcebots() {
 
 function forcebot() {
     bot "$@"
+   	local returnFolder=$(pwd)
     cd /usr/local/opt/"$@" > /dev/null
     replacetxt '"built_as_bottle":false' '"built_as_bottle":true' INSTALL_RECEIPT.json >/dev/null
-    prev > /dev/null
+    cd $returnFolder
     brew bottle "$@"
     botok 
 }
-
 function botok(){
+	local PUSH=true
+	local returnFolder=$(pwd)
     local s1=1;
     local s2=$(cat autobot.log  | grep 'bottle do'|wc -l)
     local s3=$(cat autobot.log | grep "This formula doesn't require compiling."| wc -l )
     local s4=$(($s2+$s3))
     if [ $s1 == $s4 ]
     then
-        sed -i '1s/\(.*\)/[Succeed]\1/' message.txt 
+        sed -i '1s/\(.*\)/[Succeed]\1/' message.txt ;PUSH=true
     else 
-        sed -i '1s/\(.*\)/[Failed]\1/' message.txt 
+        sed -i '1s/\(.*\)/[Failed]\1/' message.txt ;PUSH=false
     fi
     brew --env > env.txt
-    yes|cp -rf * ~/work/bottles
-    cd ~/work/bottles >>/dev/null
-    gitmsg
-    prev >>/dev/null
+    if [ $PUSH == true ]
+    then
+	    yes|cp -rf * ~/work/bottles
+	    cd ~/work/bottles >>/dev/null
+	    gitmsg
+	    cd $returnFolder >>/dev/null
+	else 
+		cat message.txt >> ~/work/tmpbot/failed.log
+	fi
 }
 
 function brewbot() {
@@ -2481,7 +2484,7 @@ function gitsend() {
     git commit -F .git/COMMIT_EDITMSG;git push
 }
 function gitarget() {
-    echo "[Usage] 'gitarget GithubTreeUrl', here the commited url is from browing github"
+    echo "[Usage] 'gitarget GithubTreeUrl', here the commited url is from blob of github"
     echo "[Example] gitarget https://github.com/ralic/python3.62mac/tree/5394bbc291eb816e7cb05a195ed93b394ad14daf"
     echo $1 | sed 's/\/tree\/*/ /' | sed "s/https:\/\/github.com\///g" |sed 's/\// /' > git.wanted
     ## $1 user , $2 repo , $3 commit
@@ -2527,12 +2530,28 @@ function gitdf() {
 }
 
 function gitadm() { 
-    echo "## This script helps you add files into git, default '--modified'"
+    echo "[Info]## This script helps you add files into git, default '--modified'"
+    echo "[Example] gitadm deleted"
     if [[ $# -eq 0 ]] ; then
         git ls-files --modified | xargs git add
     else 
-        git ls-files "$@" | xargs git add
+        git ls-files --"$@" | xargs git add
     fi
+}
+
+
+## REF : https://stackoverflow.com/questions/1186535/how-to-modify-a-specified-commit-in-git
+function gitmodify() {
+	echo "[Info]  gitmodify, This script help you just modify single commit and its message."
+	echo "[Step-1] Use 'reword' to replace 'pick' in the interactive edtior."
+	echo "[Step-2] git push -f to overwrite messages"
+    export TEXT_Editor=/usr/bin/vi
+    export EDITOR=/usr/bin/vi
+	git rebase --interactive $1
+	git commit --all --amend --no-edit
+	git rebase --continue
+	export TEXT_Editor=subl
+    export EDITOR=subl
 }
 
 ## This script help backup your current git 
@@ -2945,28 +2964,28 @@ function macdev() {
 }
 
 function sublin(){
-	echo "[Info] sublin, Function to install sublime editor as CLI EDITOR"
-	echo "
-	[Info] Sublime support for debian based linux
-	sudo ln -s /opt/sublime/sublime_text /usr/bin/subl
-	echo 'deb https://download.sublimetext.com/ apt/stable/' | sudo tee /etc/apt/sources.list.d/sublime-text.list
-	wget -qO - https://download.sublimetext.com/sublimehq-pub.gpg | sudo apt-key add -
-	sudo apt-get update ; sudo apt-get install sublime-text"
-	if [ $(cat /usr/local/bin/subl  | wc -l) -ne 2 ] ; then 
-	        if [ "$(uname -s)" == "Linux" ]; then
-	                tee /usr/local/bin/subl <<-'EOF'
-	            #!/bin/bash
-	            /usr/bin/subl "$@"
-			EOF
-	        elif [ "$(uname -s)" == "Darwin" ]; then
-	                    tee /usr/local/bin/subl <<-'EOF'
-	             #!/bin/bash
-	             '/Applications/Sublime Text.app/Contents/MacOS/Sublime Text' "$@"
-			EOF
-	        fi
-	fi
-	chmod 500 /usr/local/bin/subl 
-	echo "--- Installed /usr/local/bin/subl ----"
+    echo "[Info] sublin, Function to install sublime editor as CLI EDITOR"
+    echo "
+    [Info] Sublime support for debian based linux
+    sudo ln -s /opt/sublime/sublime_text /usr/bin/subl
+    echo 'deb https://download.sublimetext.com/ apt/stable/' | sudo tee /etc/apt/sources.list.d/sublime-text.list
+    wget -qO - https://download.sublimetext.com/sublimehq-pub.gpg | sudo apt-key add -
+    sudo apt-get update ; sudo apt-get install sublime-text"
+    if [ $(cat /usr/local/bin/subl  | wc -l) -ne 2 ] ; then 
+            if [ "$(uname -s)" == "Linux" ]; then
+                    tee /usr/local/bin/subl <<-'EOF'
+                #!/bin/bash
+                /usr/bin/subl "$@"
+EOF
+            elif [ "$(uname -s)" == "Darwin" ]; then
+                        tee /usr/local/bin/subl <<-'EOF'
+                 #!/bin/bash
+                 '/Applications/Sublime Text.app/Contents/MacOS/Sublime Text' "$@"
+EOF
+            fi
+    fi
+    chmod 500 /usr/local/bin/subl 
+    echo "--- Installed /usr/local/bin/subl ----"
 }
 
 function getflags() {
@@ -2981,6 +3000,7 @@ function linkopts() {
     export LDFLAGS="-L$OPT_PREFIX/$NEXTLIB/lib $LDFLAGS"
     export CPPFLAGS="-I$OPT_PREFIX/$NEXTLIB/include $CPPFLAGS"
     export PATH="$OPT_PREFIX/$NEXTLIB/include:$PATH"
+    export PKG_CONFIG_PATH="$OPT_PREFIX/$NEXTLIB/lib/pkgconfig:$PKG_CONFIG_PATH"
     # getflags
 }
 
@@ -3004,6 +3024,7 @@ declare -a liblist=(
     "opencl" "grt"
     "suite-sparse" "valgrind"
     "python3"
+    "rtmpdump" "libmetalink" ## for powerful curl
     )
 
 function printlibs {
@@ -3034,6 +3055,7 @@ function keylibs() {
     export CPPFLAGS="-I$BREW_PREFIX/include $CPPFLAGS"
     export LDFLAGS="-L$OPT_PREFIX/readline/lib $LDFLAGS"
     export CPPFLAGS="-I$OPT_PREFIX/readline/include/readline $CPPFLAGS"
+    export PKG_CONFIG_PATH="$BREW_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
     export LINKFLAGS="$CPPFLAGS"
 }
 
@@ -3047,7 +3069,7 @@ function morelibs(){
     linkopts cython
 }
 setcc
-keylibs
+# keylibs
 printlibs > /dev/null
 bootlibs >/dev/null
 
@@ -3061,5 +3083,16 @@ export PATH="/usr/local/bin:/usr/local:/usr/local/sbin:/usr/local/include:/usr/l
 export PATH="$BREW_PREFIX/bin;$BREW_PREFIX/sbin:$BREW_PREFIX/lib;$BREW_PREFIX/include;$PATH"
 export MANPATH="$BREW_PREFIX:/share/man:$MANPATH"
 export INFOPATH="$BREW_PREFIX/share/info:$INFOPATH"
-export PKG_CONFIG_PATH="$BREW_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
 export PATH="$PATH:/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/opt/aws/bin:/usr/local/bin"
+
+### CMAKE FLAGS SUPPORT
+export CMAKE_CXX_FLAGS="-isystem $CPPFLAGS /usr/local/include" 
+export CMAKE_CFLAGS="-Wall -Ofast $CFLAGS $MATHFLAGS" 
+export CMAKE_C_FLAGS="-Wall -Ofast  $MATHFLAGS" 
+export CMAKE_CXX_FLAGS_DEBUG="-Wall -Ofast $MATHFLAGS"
+export PROJ_LIB="~/work/proj"
+
+function cumakes() {
+	cmake -G 'Unix Makefiles' -DCMAKE_CXX_FLAGS=-isystem\ /usr/include
+	make -j$PACORES -k
+}
