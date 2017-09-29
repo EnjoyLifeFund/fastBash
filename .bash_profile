@@ -30,11 +30,6 @@
 # CPP         C preprocessor ## gcc -E
 # CXXCPP      C++ preprocessor
 
-## TODO -- To detect x11 to add sublime
-## Set Default Editor , Priority : Nano -> Vim
-# export TEXT_Editor=/usr/bin/nano || /usr/bin/vi
-# export EDITOR=/usr/bin/nano || /usr/bin/vi
-
 ## TODO 
 # --with-cxxflags='-mmic ' \
 # --with-cflags='-mmic '
@@ -50,13 +45,14 @@
 
 alias xxargs='xargs -n 1 -P $PACORES'
 CCSET="mpicc"
+GCC_VER=7
 function setcc() {
     echo "PACORES="$PACORES
     echo "[Info] setcc ,Function to change compiler settings. CCSET="$CCSET
     case $CCSET in
-        "gcc-7") ## GCC ##
-            FC="gfortran-7";CC="gcc-7";CXX="gcc-7" ;CPP="gcc-7 -E";CXXCPP="gcc-7 -E"
-            export HOMEBREW_CC="gcc-7"
+        "gccb") ## GCC ##
+            FC="gfortran-$GCC_VER";CC="gcc-$GCC_VER";CXX="gcc-$GCC_VER" ;CPP="gcc-$GCC_VER -E";CXXCPP="gcc-$GCC_VER -E"
+            export HOMEBREW_CC="gcc-$GCC_VER"
         ;;
         "clang")  ## CLANG ##
             FC="gfortran";CC="cc";CXX="cc" ;CPP="gcc -E";CXXCPP="gcc -E"
@@ -70,8 +66,8 @@ function setcc() {
         ;;
         "gcc") ## GCC7 ##
             FC="gfortran";  CC="gcc" ;CXX="gcc" ; 
-            # CPP="gcc -E" ; CXXCPP=" gcc -E" ;
-            # export HOMEBREW_CC="cc"
+            CPP="gcc -E" ; CXXCPP=" gcc -E" ;
+            export HOMEBREW_CC="cc"
         ;;    
         *) ## NO Setting as default ##
         ;;  
@@ -80,10 +76,20 @@ function setcc() {
 }
 export MAKEJOBS="-j16"
 alias cgrep="grep --color=always"
-
+function cheditor() {
+    echo "[Info] cheditor, Script to change your default terminal editor"
+    if [[ $# -eq 0 ]] ; then
+        local VAR_EDITOR=subl   
+    else
+        local VAR_EDITOR="$@"
+    fi
+    export TEXT_Editor=$VAR_EDITOR
+    export EDITOR=$VAR_EDITOR
+}
 # export HOMEBREW_BUILD_FROM_SOURCE=1
 ### For Linux/Debian
 if [ "$(uname -s)" == "Linux" ]; then
+    cheditor
     ## PARALLEL PROCESSING for lz4dir/xz4dir 
     PACORES=$(( $(grep -c ^processor /proc/cpuinfo) )) 
     PACORES=$(( $PACORES * 2 ))
@@ -102,7 +108,7 @@ if [ "$(uname -s)" == "Linux" ]; then
     READLINK="readlink"
     JAVA_HOME="$OPT_PREFIX/jdk"
     system_VER=64
-    LTOFLAGS="-flto -m32" # -m64 
+    LTOFLAGS="-flto" # -m32 # -m64 
     alias make="make $MAKEJOBS"
     COLOR_FLAG="--color=auto"
     export BREW_PREFIX="/home/linuxbrew/.linuxbrew"
@@ -110,18 +116,17 @@ fi
 
 ### For MacOS/Darwin
 if [ "$(uname -s)" == "Darwin" ]; then
-    export TEXT_Editor=subl #/usr/bin/nano || /usr/bin/vi
-    export EDITOR=subl # /usr/bin/nano || /usr/bin/vi
+    cheditor
     MACOSX_DEPLOYMENT_TARGET=$(sw_vers | grep ProductVersion | awk '{print $2}')
-    # export MACOSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET"
-    export MACOSX_DEPLOYMENT_TARGET=10.5
+    export MACOSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET"
+    # export MACOSX_DEPLOYMENT_TARGET=10.5
     PACORES=$(sysctl hw | grep hw.ncpu | awk '{print $2}')
     PACORES=$(( $PACORES * 2 ))
      # f:            Opens current directory in MacOS Finder
     alias f='open -a Finder ./'                
     READLINK="readlink"
     system_VER=64
-    LTOFLAGS="-flto " # -m32 -fopenmp  -m64 -m32 
+    LTOFLAGS="" #-flto " # -m32 -fopenmp  -m64 -m32 
     JAVA_HOME=$(/usr/libexec/java_home)
     COLOR_FLAG="--color=auto"
     BREW_PREFIX="/usr/local"
@@ -167,10 +172,9 @@ alias bp3='python3 setup.py bdist > dist.log;python3 setup.py install'
 
 export MachineFLAGS="-mmmx  -msse -maes -march=native $LTOFLAGS" # -lpthread
 export MATHFLAGS="-ffast-math -Ofast -fno-signed-zeros -ffp-contract=fast $MachineFLAGS " #-mfpmath=sse+387 
-
 ### DEFAULT FLAGS SUPPORT
 ##http://www.netlib.org/benchmark/hpl/results.html
-export CFLAGS="-fomit-frame-pointer -funroll-loops  $MATHFLAGS "
+export CFLAGS="-fomit-frame-pointer -funroll-loops  $MATHFLAGS -isystem /usr/include -isystem $BREW_PREFIX/include"
 export CXXFLAGS="$MATHFLAGS "
 export FFLAGS="$CFLAGS  $MATHFLAGS "
 
@@ -313,6 +317,7 @@ export SCALA_HOME=$OPT_PREFIX/scala/idea
 alias pip3="export PYTHONPATH=/usr/local/lib/python3.6/site-packages;pip3"
 alias pypath3="export PYTHONPATH=/usr/local/lib/python3.6/site-packages"
 alias pypath2="export PYTHONPATH=/usr/local/lib/python2.7/site-packages"
+alias xpath="echo /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/"
 
 JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_144.jdk/Contents/Home/jre
 SPARK_HOME="$OPT_PREFIX/apache-spark/libexec"
@@ -503,7 +508,6 @@ EOT
          fi
     }
 
-
 #   ---------------------------
 #   4.  SEARCHING
 #   ---------------------------
@@ -518,6 +522,20 @@ function gftype() {
     grep ".*\."$1"$"
 }
 
+function findcp() {
+    echo "[Info] findmv, Generate a script for copy ONLY files in CURRENT folder to another folder"
+    echo "args1 : new folder name"
+    echo '[Question] Starts ? (yes / others for skip)' 
+    read option 
+    case $option in
+            yes)
+                "find . -maxdepth 1 -type f  -print0 | ffilter | xargs -n 1 -P $PACORES  -0 -I'{}' cp '{}' $1"
+            ;;
+            *)
+                echo "find . -maxdepth 1 -type f -print0 | ffilter | xargs -n 1 -P $PACORES  -0 -I'{}' cp '{}' $1"
+            ;;
+    esac
+}
 #   spotlight: Search for a file using MacOS Spotlight's metadata
 #   -----------------------------------------------------------
     spotlight () { mdfind "kMDItemDisplayName == '$@'wc"; }
@@ -994,7 +1012,7 @@ function cmacabi() {
 }
 
 function ccpu () {
-    echo "[Info] ccpu, Function to show the gpu's strength"
+    echo "[Info] ccpu, Function to show the cpu's strength"
     if [ "$(uname -s)" == "Linux" ]; then
             /bin/cat /proc/cpuinfo &&
             lscpu
@@ -1729,17 +1747,12 @@ function myip3() {
 ## Author: Ralic Lo
 
 function myipv6() {
-    if [ "$(uname -s)" == "Darwin" ]; then
-        ip -6 addr show en0 | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/'
-    else
-      ip -6 addr show eth0| grep inet6 | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/'
-    fi
-    echo git remote set-url origin https://github.com/ralic/homebrew-core.git
-     #[Linux] 
-     # ip -6 addr show en0| grep inet6 | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/'
- }
-
-
+     if [ "$(uname -s)" == "Darwin" ]; then
+         ip -6 addr show en0 | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/'
+     else
+         ip -6 addr show eth0| grep inet6 | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/'
+     fi
+}
 
 ## Requirement :  npm install goo.gl -g 
 ## Return shortened URL from google's service.
@@ -2319,7 +2332,7 @@ function bot() {
     local BOT_PATH=~/work/bottles/tmpbot/"$1"
     mkdir -p $BOT_PATH;cd $BOT_PATH
     brew info "$1" > message.txt
-    uname -ov >> message.txt
+    uname -ovr >> message.txt
     brew install "$@" --build-bottle  > autobot.log
     brew upgrade "$@" --build-bottle  >> autobot.log
     brew bottle "$@" >> autobot.log
@@ -2333,7 +2346,7 @@ function forcebots() {
 
 function forcebot() {
     bot "$@"
-   	local returnFolder=$(pwd)
+    local returnFolder=$(pwd)
     cd /usr/local/opt/"$@" > /dev/null
     replacetxt '"built_as_bottle":false' '"built_as_bottle":true' INSTALL_RECEIPT.json >/dev/null
     cd $returnFolder
@@ -2341,8 +2354,8 @@ function forcebot() {
     botok 
 }
 function botok(){
-	local PUSH=true
-	local returnFolder=$(pwd)
+    local PUSH=true
+    local returnFolder=$(pwd)
     local s1=1;
     local s2=$(cat autobot.log  | grep 'bottle do'|wc -l)
     local s3=$(cat autobot.log | grep "This formula doesn't require compiling."| wc -l )
@@ -2356,13 +2369,13 @@ function botok(){
     brew --env > env.txt
     if [ $PUSH == true ]
     then
-	    yes|cp -rf * ~/work/bottles
-	    cd ~/work/bottles >>/dev/null
-	    gitmsg
-	    cd $returnFolder >>/dev/null
-	else 
-		cat message.txt >> ~/work/tmpbot/failed.log
-	fi
+        yes|cp -rf * ~/work/bottles
+        cd ~/work/bottles >>/dev/null
+        gitmsg
+        cd $returnFolder >>/dev/null
+    else 
+        cat message.txt >> ~/work/tmpbot/failed.log
+    fi
 }
 
 function brewbot() {
@@ -2423,7 +2436,7 @@ function gobrew() {
     if [ "$(uname -s)" == "Darwin" ]; then
         cd /usr/local/Homebrew/Library/Taps/homebrew/homebrew-core/Formula
     else
-        cd /home/linuxbrew/.linuxbrew/Library/Taps/homebrew/homebrew-core/Formula/
+        cd /home/linuxbrew/.linuxbrew/Homebrew/Library/Taps/homebrew/homebrew-core/Formula
     fi
     echo git remote set-url origin https://github.com/ralic/homebrew-core.git
 }
@@ -2443,6 +2456,15 @@ function gosystem() {
     cd /Library/Preferences/SystemConfiguration
 }
 
+function cspace() {
+    echo "[Info] Checking boot configurations in Linux to see if it supports namesspace, required by ICU4C"
+    echo "File : /boot/config-$(uname -a | awk '{print $3}')"
+
+    if [[ `sudo cat /boot/config-$(uname -a | awk '{print $3}') |grep '^CONFIG_USER_NS'` == "CONFIG_USER_NS=y" ]]; 
+    then echo "You have support for User Namespaces"; 
+    else echo "Sorry, you don't have support for User Namespaces"; 
+    fi
+}
 function findtxt() {
     echo "[Usage] findtxt about 'keyword' recursively in current folder"
     echo "[Info] example : findtxt '/usr/bin/env python'"
@@ -2533,26 +2555,34 @@ function gitadm() {
     echo "[Info]## This script helps you add files into git, default '--modified'"
     echo "[Example] gitadm deleted"
     if [[ $# -eq 0 ]] ; then
-        git ls-files --modified | xargs git add
+        git ls-files --modified | xxargs git add
     else 
-        git ls-files --"$@" | xargs git add
+        git ls-files --"$@" | xxargs git add
     fi
 }
 
 
 ## REF : https://stackoverflow.com/questions/1186535/how-to-modify-a-specified-commit-in-git
 function gitmodify() {
-	echo "[Info]  gitmodify, This script help you just modify single commit and its message."
-	echo "[Step-1] Use 'reword' to replace 'pick' in the interactive edtior."
-	echo "[Step-2] git push -f to overwrite messages"
-    export TEXT_Editor=/usr/bin/vi
-    export EDITOR=/usr/bin/vi
-	git rebase --interactive $1
-	git commit --all --amend --no-edit
-	git rebase --continue
-	export TEXT_Editor=subl
-    export EDITOR=subl
+    echo "[Info]  gitmodify, This script help you just modify single commit and its message."
+    echo "[Step-1] Use 'reword' to replace 'pick' in the interactive edtior."
+    echo "[Step-2] git push -f to overwrite messages"
+    cheditor /usr/bin/vi
+    git rebase --interactive $1
+    git commit --all --amend --no-edit
+    git rebase --continue
+    export TEXT_Editor=subl
+    cheditor
 }
+
+# Go forward in Git commit hierarchy, towards particular commit 
+# Does nothing when the parameter is not specified.
+git4wd() {
+  git checkout $(git rev-list --topo-order HEAD.."$*" | tail -1)
+}
+
+# Go back in Git commit hierarchy
+alias gitback='git checkout HEAD~'
 
 ## This script help backup your current git 
 ## and pull everthing from remote and reset it
@@ -2680,7 +2710,6 @@ function ffilter() {
 ##  | sed -e "s/'/\\\'/g" -e 's/"/\\"/g' -e 's/ /\\ /g' 
     sed -e "s/'/\\\'/g" -e 's/"/\\"/g' -e 's/ /\\ /g' 
 }
-
 function lz4dir() {
     find $1 -type d -print0 | xargs -n 1 -P $PACORES -0 -I'{}' mkdir -p './.lz4/{}'
     find $1 -type f | ffilter | xargs -n 1 -P $PACORES  lz4 -9m
@@ -2811,7 +2840,7 @@ function rebrew () {
 
 function relinkbrew () {
    ## Remove --force
-   brew list | xargs brew link --overwrite  | grep Warning | grep keg-only
+   brew list | xxargs -n 1 -P brew link --overwrite $1 | grep Warning | grep keg-only
 }
 
 function brewtree () {
@@ -2823,15 +2852,18 @@ function brewtree () {
 ## This script helps porting all python scripts to python3 .
 ## Prequisite : brew install xargs python3
 function allpy3() {
-    find . -name '*.py' | xargs 2to3-3.6 -w
-    find . -name '*.bak' | xargs  rm
+    find . -name '*.py' | xxargs 2to3-3.6 -w
+    find . -name '*.bak' | xxargs  rm
 }
 
 ## This script helps upgrading all installed python3 packages.
 function repip3() {
     pip3 list |awk '{print "echo [Info]pip3 install --upgrade "$1";pip3 install --upgrade "$1}' > pip3.tmp
     ### some packages may gets downgraded 
-    cat pip3.tmp |  grep -vF "echo [Info]pip3 install --upgrade azure;pip3 install --upgrade azure"> pip3.update
+    cat pip3.tmp \ |
+    grep -vF "echo [Info]pip3 install --upgrade azure;pip3 install --upgrade azure" \|
+    grep -vF "echo [Info]pip3 install --upgrade azure-mgmt;pip3 install --upgrade azure-mgmt" \|
+    > pip3.update
     rm pip3.tmp
     echo "pip3 install --upgrade py4j jupyter bleach" >> pip3.update 
     echo "rm -rf ~/Library/Caches/pip" >> pip3.update
@@ -3020,9 +3052,10 @@ declare -a liblist=(
     "gettext"  #"readline"
     "lapack" "openblas"
     "libkml" "libtool" "libunistring" "libiconv"
-    "binutils" "sqlite"
+    "binutils" "sqlite" "icu4c"
+    "thrift" "libarchive" ## for osquery
     "opencl" "grt"
-    "suite-sparse" "valgrind"
+    "suite-sparse" "valgrind" "aws-sdk-cpp"
     "python3"
     "rtmpdump" "libmetalink" ## for powerful curl
     )
@@ -3049,6 +3082,15 @@ function bootlibs {
     getflags
 }
 
+function kouser() {
+    echo "[Info] Kill and Logout a User"
+    skill -KILL -u tiger
+}
+
+function kvnc() {
+    ps aux | grep vnc | grep  desktop | awk '{print "kill "$2}' > kvnc.pid
+    . kvnc.pid
+}
 
 function keylibs() {
     export LDFALGS="-L$BREW_PREFIX/lib $LDFLAGS"
@@ -3062,7 +3104,6 @@ function keylibs() {
 function morelibs(){
     linkopts portable-expat
     linkopts portaudio
-    linkopts libarchive
     linkopts qt
     linkopts metis
     linkopts opencv
@@ -3084,6 +3125,8 @@ export PATH="$BREW_PREFIX/bin;$BREW_PREFIX/sbin:$BREW_PREFIX/lib;$BREW_PREFIX/in
 export MANPATH="$BREW_PREFIX:/share/man:$MANPATH"
 export INFOPATH="$BREW_PREFIX/share/info:$INFOPATH"
 export PATH="$PATH:/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/opt/aws/bin:/usr/local/bin"
+export LDFALGS="-L/home/linuxbrew/.linuxbrew/lib $LDFALGS"
+export CPPFALGS="-L/home/linuxbrew/.linuxbrew/lib $LDFALGS"
 
 ### CMAKE FLAGS SUPPORT
 export CMAKE_CXX_FLAGS="-isystem $CPPFLAGS /usr/local/include" 
@@ -3093,6 +3136,8 @@ export CMAKE_CXX_FLAGS_DEBUG="-Wall -Ofast $MATHFLAGS"
 export PROJ_LIB="~/work/proj"
 
 function cumakes() {
-	cmake -G 'Unix Makefiles' -DCMAKE_CXX_FLAGS=-isystem\ /usr/include
-	make -j$PACORES -k
+    ##\ /usr/include 
+    cmake -G 'Unix Makefiles' -DCMAKE_CXX_FLAGS=
+    cmake -G 'Unix Makefiles' -DCMAKE_CXX_FLAGS=-isystem -DCMAKE_INSTALL_PREFIX=/usr/local/Cellar/$1
+    make -j$PACORES -k
 }
