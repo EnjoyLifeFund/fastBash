@@ -44,13 +44,13 @@
 ##                   -- It's ok to replace gcc c++ by gcc-7
 
 alias xxargs='xargs -n 1 -P $PACORES'
-CCSET="mpicc"
+CCSET="gccx"
 GCC_VER=7
 function setcc() {
     echo "PACORES="$PACORES
     echo "[Info] setcc ,Function to change compiler settings. CCSET="$CCSET
     case $CCSET in
-        "gccb") ## GCC ##
+        "gccx") ## GCC ##
             FC="gfortran-$GCC_VER";CC="gcc-$GCC_VER";CXX="gcc-$GCC_VER" ;CPP="gcc-$GCC_VER -E";CXXCPP="gcc-$GCC_VER -E"
             export HOMEBREW_CC="gcc-$GCC_VER"
         ;;
@@ -93,6 +93,8 @@ if [ "$(uname -s)" == "Linux" ]; then
     ## PARALLEL PROCESSING for lz4dir/xz4dir 
     PACORES=$(( $(grep -c ^processor /proc/cpuinfo) )) 
     PACORES=$(( $PACORES * 2 ))
+    UsrPATH="/home"
+    UsrNAME=$(whoami)
     ## Linuxbrew Support
     #export MASTERUSER= $(whoami)
      # sudo mkdir -p /home/linuxbrew
@@ -122,14 +124,15 @@ if [ "$(uname -s)" == "Darwin" ]; then
     # export MACOSX_DEPLOYMENT_TARGET=10.5
     PACORES=$(sysctl hw | grep hw.ncpu | awk '{print $2}')
     PACORES=$(( $PACORES * 2 ))
+    UsrPATH="/Users"
      # f:            Opens current directory in MacOS Finder
     alias f='open -a Finder ./'                
-    READLINK="readlink"
+    READLINK="greadlink"
     system_VER=64
     LTOFLAGS="" #-flto " # -m32 -fopenmp  -m64 -m32 
     JAVA_HOME=$(/usr/libexec/java_home)
     COLOR_FLAG="--color=auto"
-    BREW_PREFIX="/usr/local"
+    export BREW_PREFIX="/usr/local"
     alias make="gmake $MAKEJOBS"
     # export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-9.jdk/Contents/Home
     # export JAVA6_HOME="/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home"
@@ -260,8 +263,8 @@ LDFLAGS="-L/usr/local/opt/python3/lib $LDFLAGS"
 export MANPATH="$OPT_PREFIX/gnu-sed/libexec/gnuman:$MANPATH" ## man gsed for gnused
 export MANPATH="$OPT_PREFIX/coreutils/libexec/gnuman:$MANPATH"
 export PATH="$OPT_PREFIX/coreutils/libexec/gnubin:$PATH"
-export LDFLAGS="-L/usr/local/Cellar/gcc/7.2.0/lib/gcc/7  $LDFLAGS" 
-export CPPFLAGS="-I/usr/local/Cellar/gcc/7.2.0/lib/gcc/7/gcc/x86_64-apple-darwin17.0.0/7.2.0/include  $LDFLAGS" 
+# export LDFLAGS="-L/usr/local/Cellar/gcc/7.2.0/lib/gcc/7  $LDFLAGS" 
+# export CPPFLAGS="-I/usr/local/Cellar/gcc/7.2.0/lib/gcc/7/gcc/x86_64-apple-darwin17.0.0/7.2.0/include  $LDFLAGS" 
 
 ## X11 Support
 export PATH="/opt/X11/bin:$PATH"
@@ -529,7 +532,7 @@ function findcp() {
     read option 
     case $option in
             yes)
-                "find . -maxdepth 1 -type f  -print0 | ffilter | xargs -n 1 -P $PACORES  -0 -I'{}' cp '{}' $1"
+                find . -maxdepth 1 -type f  -print0 | ffilter | xargs -n 1 -P $PACORES  -0 -I'{}' cp '{}' $1
             ;;
             *)
                 echo "find . -maxdepth 1 -type f -print0 | ffilter | xargs -n 1 -P $PACORES  -0 -I'{}' cp '{}' $1"
@@ -1052,23 +1055,22 @@ function rcf () {
     awk '{ print "Rows : "NR"\nColumns : "NF }' $1
 }
 
-function tsfile () {
-    echo "[Info] tsfile, Function that transverse a file."
-    awk '
-    {
-        for (i = 1; i <= NF; i++) {
-            if(NR == 1) {
-                s[i] = $i;
-            } else {
-                s[i] = s[i] " " $i;
-            }
-        }
-    }
-    END {
-        for (i = 1; s[i] != ""; i++) {
-            print s[i];
-        }
-    }' $1
+function rfile () {
+    echo "[Info] rfile, Function that transverse a file."
+	awk '{
+	    if(NR==1) {
+	        for(i=1;i<=NF;i++) {
+	            arr[i] = $i
+	        }
+	    } else {
+	        for(i=1;i<=NF;i++) {
+	            arr[i] = arr[i]" "$i
+	        }
+	    }
+	}
+	END {for(i=1;i<=NF;i++) {
+	    print arr[i]
+	}}'  $1
 }
 
 function arrys () {
@@ -1409,7 +1411,7 @@ function ddocker () {
     echo [Info] Use dm to list docker machine "dm ls" 
     echo [Info] Use dm to stop docker machine "dm stop" 
     echo [Info] For Kaggle : 'docker pull kaggle/rstats:latest'
-    echo [Info] For Kaggle : 'docker run -it -p 8787:8787 --rm -v /Users/mchirico/Dropbox/kaggle/death:/tmp/working  kaggle/rstats /bin/bash -c "rstudio-server restart & /bin/bash"'
+    echo [Info] For Kaggle : 'docker run -it -p 8787:8787 --rm -v $UsrPATH/mchirico/Dropbox/kaggle/death:/tmp/working  kaggle/rstats /bin/bash -c "rstudio-server restart & /bin/bash"'
     echo "------"
     alias dm=docker-machine
     sudo docker-machine ls
@@ -1425,7 +1427,7 @@ function ec () {
     # Download and install Electron here --  http://electron.atom.io/
     ## Check software version
     if [ "$(sw_vers -productName)" == "Mac OS X" ]; then
-    /Users/$(id -un)/work/electron-api-demos/node_modules/electron-prebuilt/dist/Electron.app/Contents/MacOS/Electron "$@"
+    $UsrPATH/$(id -un)/work/electron-api-demos/node_modules/electron-prebuilt/dist/Electron.app/Contents/MacOS/Electron "$@"
     fi
 }
 
@@ -1765,7 +1767,7 @@ function surl() {
 }
 
 ## This script helps to provide a link to your server using ipv6.
-## It works under a router.
+## It works if you have an IPV6 ISP provider.
 function linkme() {
     echo open https://[$(myipv6 | cline 1)]
     surl https://[$(myipv6 | cline 1)]
@@ -1799,9 +1801,9 @@ function ggit() {
     case $option in 
         load) 
             # The next line updates PATH for the Google Cloud SDK.
-            source '/Users/raliclo/private/google-cloud-sdk/path.bash.inc'
+            source '$UsrPATH/$UsrNAME/private/google-cloud-sdk/path.bash.inc'
             # The next line enables shell command completion for gcloud.
-            source '/Users/raliclo/private/google-cloud-sdk/completion.bash.inc'
+            source '$UsrPATH/$UsrNAME/private/google-cloud-sdk/completion.bash.inc'
             return
         ;;      
         init) 
@@ -1962,7 +1964,7 @@ function cmsave() {
 
 function cmclean() {
     # Clean chrome cache
-    rm -R '/Users/raliclo/Library/Caches/Google/Chrome/Default/Media Cache'
+    rm -R '$UsrPATH/$UsrNAME/Library/Caches/Google/Chrome/Default/Media Cache'
 }
 
 function cmi() {
@@ -2333,8 +2335,8 @@ function bot() {
     mkdir -p $BOT_PATH;cd $BOT_PATH
     brew info "$1" > message.txt
     uname -ovr >> message.txt
-    brew install "$@" --build-bottle  > autobot.log
-    brew upgrade "$@" --build-bottle  >> autobot.log
+    brew install "$@" --build-bottle --no-sandbox  > autobot.log
+    brew upgrade "$@" --build-bottle --no-sandbox  >> autobot.log
     brew bottle "$@" >> autobot.log
     brew postinstall "$@"
 }
@@ -2855,6 +2857,29 @@ function allpy3() {
     find . -name '*.py' | xxargs 2to3-3.6 -w
     find . -name '*.bak' | xxargs  rm
 }
+function gotravis(){
+	mkdir backup
+	echo message.txt >> .gitignore
+	cp .travis.yml backup
+	cp requirements.txt backup
+	## Get travis setup from dropbox
+	dget .travis.yml
+	dget requirements.txt
+	dget helpTest.py
+	## Get package name from setup.py ## | cut -d'"' -f 2
+	PY3PKG=$(cat setup.py | grep 'name=' | sed s/..$// | sed s/.*=.//) 
+	# PY3PKG=$(cat setup.py | grep 'py_modules' | sed 's/...$//;s/.*=//;s/^ *//;s/ *$//;s/^..//')
+	## Fetch info from pip3 , sometimes nothing.
+	pip3 show $PY3PKG >> message.txt  
+	## Fulfill all previous requirement
+	cat backup/requirements.txt > requirements.txt 
+	## Repace default pkgname
+	replacetxt 'Bat-belt' $PY3PKG '.travis.yml' 
+	git add .travis.yml
+	git add requirements.txt
+	git add helpTest.py
+	git add .gitignore
+}
 
 ## This script helps upgrading all installed python3 packages.
 function repip3() {
@@ -2879,7 +2904,11 @@ function hi100() {
 ## Find only executables
 ## This sciprt help search for all executables
 function findexe() {
-     find . -executable -type f | xargs file > execfile.log;
+	 if [ "$(uname -s)" == "Darwin" ]; then
+         gfind . -executable -type f | xargs file > execfile.log;
+     else
+         find . -executable -type f | xargs file > execfile.log;
+     fi
      cat execfile.log
 }
 
@@ -2945,9 +2974,6 @@ alias jp3="python3 /usr/local/lib/python3.6/site-packages/jupyter.py notebook"
 # export PATH="/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS6.1.sdk/usr/include/:$PATH"
 export PATH="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/4.2/include:$PATH"
 ##/bin/cp /usr/local/Cellar/gettext/0.19.8.1/lib/libintl.8.dylib /usr/local/lib/libintl.8.dylib
-export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
-export MANPATH="/home/linuxbrew/.linuxbrew/share/man:$MANPATH"
-export INFOPATH="/home/linuxbrew/.linuxbrew/share/info:$INFOPATH"
 ## Perl5 upgrade // Run once ?
 # PERL_MM_OPT="INSTALL_BASE=$HOME/perl5" cpan local::lib
 # echo 'eval "$(perl -I$HOME/perl5/lib/perl5 -Mlocal::lib)"' >> ~/.bash_profile
@@ -2961,7 +2987,7 @@ export WELD_HOME="~/.weld"
 export PATH="$PATH:/Volumes/data/WorkSpace"
 alias airport="/System/Library/PrivateFrameworks/Apple80211.framework/Resources/airport"
 alias nets="/usr/sbin/networksetup -listallhardwareports"
-export PATH="/Users/dojo/work/.npm/bin/:$PATH"
+export PATH="$UsrPATH/$UsrNAME/work/.npm/bin/:$PATH"
 
 
 ## OPT lib support
@@ -2969,10 +2995,9 @@ export PATH="$OPT_PREFIX/parallel-netcdf/include:$PATH"
 export PATH="$OPT_PREFIX/openssl/lib:$PATH:"
 export PATH="$OPT_PREFIX/texinfo/bin:$PATH"
 
-
-
 ## Customized / Shared package path for multi-OS version
-export PATH="/Library/Frameworks/Python.framework/Versions/3.6/bin:$PATH"
+export PATH="$OPT_PREFIX/opt/python3/Frameworks/Python.framework/Versions/3.6/bin:$PATH"
+
 # mkdir -p /Volumes/data/python/3.6/site-packages
 # cp -rf /usr/local/lib/python3.6/site-packages /Volumes/data/WorkSpace/python/3.6/site-packages
 # rm -rf /usr/local/lib/python3.6/site-packages
