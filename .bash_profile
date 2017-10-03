@@ -687,15 +687,15 @@ function httpDebug () { /usr/bin/curl $@ -o /dev/null -w "dns: %{time_namelookup
 
 ##### Dropbox_shell integration #####
 #Looking for dropbox uploader
-if [ -f "./dup.sh" ]; then
-    DU="./dup.sh"
-else
-    DU=$(which dup.sh)
-    if [ $? -ne 0 ]; then
-        echo "Dropbox Uploader not found!"
-        return 1
-    fi
-fi
+# if [ -f "./dup.sh" ]; then
+#     DU="./dup.sh"
+# else
+#     DU=$(which dup.sh)
+#     if [ $? -ne 0 ]; then
+#         echo "Dropbox Uploader not found!"
+#         return 1
+#     fi
+# fi
 
 DU=/usr/local/bin/dup.sh
 
@@ -2091,8 +2091,8 @@ function mockmoe() {
 ptouch() {
     for p in "$@"; do
         _dir="$(dirname -- "$p")"
-        [ -d "$_dir" ] || mkdir -p -- "$_dir"
-    touch -- "$p"
+        [ -d "$_dir" ] || sudo mkdir -p -- "$_dir"
+    sudo touch -- "$p"
     done
 }
 
@@ -2842,7 +2842,7 @@ function rebrew () {
 
 function relinkbrew () {
    ## Remove --force
-   brew list | xxargs -n 1 -P brew link --overwrite $1 | grep Warning | grep keg-only
+   brew list | xargs -n 1 -P $PACORES brew link --overwrite $1 | grep Warning | grep keg-only
 }
 
 function brewtree () {
