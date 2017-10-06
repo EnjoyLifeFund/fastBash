@@ -44,7 +44,9 @@
 ##                   -- It's ok to replace gcc c++ by gcc-7
 
 alias xxargs='xargs -n 1 -P $PACORES'
-CCSET="gccx"
+alias sll=subl
+
+CCSET="gcc"
 GCC_VER=7
 function setcc() {
     echo "PACORES="$PACORES
@@ -142,27 +144,6 @@ if [ "$(uname -s)" == "Darwin" ]; then
     ## IMPORTANT Check it by : diskutil info / | grep "Block Size"
     export BLOCKSIZE=4096
 fi
-    ## For mac -- To view du like linux 
-    # function duh () {
-    #   du -k $1 $2 $3 $4 | awk '{if($1>1024){r=$1%1024;if(r!=0)
-    #      {sz=($1-r)/1024}else{sz=$1/1024}print sz"Mt"$2;}
-    #      else{print $1"Kt"$2}}'
-    # } 
-    # alias du=duh
-
-# alias find="gfind" ## [Waring Ignored] gfind: invalid argument `-1d' to `-mtime'
-# alias time="gtime -v"
-# alias tar=gtar
-# alias xargs=gxargs ## Using GNU's xargs to enable -i feature.
-# ln -s /usr/local/bin/python3 /usr/local/bin/python 
-# alias python=python3 
-
-alias sll=subl
-#### Completed OS related script #### 
-export PATH="$BREW_PREFIX/bin:$PATH"
-export PATH="$BREW_PREFIX/sbin:$PATH"
-export PATH="$BREW_PREFIX/lib:$PATH"
-export PATH="$BREW_PREFIX/include:$PATH"
 export OPT_PREFIX="$BREW_PREFIX/opt"
 
 ## Universal workspace for two or more versions of macOS development
@@ -173,11 +154,13 @@ alias linkwork='ln -s /Volumes/data/WorkSpace $(pwd)/work'
 alias bp3='python3 setup.py bdist > dist.log;python3 setup.py install'
 # http://www.netlib.org/benchmark/hpl/results.html
 
-export MachineFLAGS="-mmmx  -msse -maes -march=native $LTOFLAGS" # -lpthread
+#https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/i386-and-x86_002d64-Options.html
+export CPUFLAGS="-msseregparm  -mmmx -msse -msse2 -msse3 -maes -mtune=native -mmovbe"
+export MachineFLAGS="-mfpmath=both -masm=intel -mo-align-double -m128bit-long-double $LTOFLAGS $CPUFLAGS" # -lpthread
 export MATHFLAGS="-ffast-math -Ofast -fno-signed-zeros -ffp-contract=fast $MachineFLAGS " #-mfpmath=sse+387 
 ### DEFAULT FLAGS SUPPORT
-##http://www.netlib.org/benchmark/hpl/results.html
-export CFLAGS="-fomit-frame-pointer -funroll-loops  $MATHFLAGS -isystem /usr/include -isystem $BREW_PREFIX/include"
+##http://www.netlib.org/benchmark/hpl/results.html #-isystem /usr/include 
+export CFLAGS="-fomit-frame-pointer -funroll-loops  $MATHFLAGS -isystem $BREW_PREFIX/include"
 export CXXFLAGS="$MATHFLAGS "
 export FFLAGS="$CFLAGS  $MATHFLAGS "
 
@@ -185,7 +168,7 @@ export FFLAGS="$CFLAGS  $MATHFLAGS "
 # DEBUGFLAG="-g"
 alias cpx="cc -c $LDFLAGS $DEBUGFLAG $CFLAGS -Ofast -flto"
 
-export ARCHFLAGS="-march=native"
+export ARCHFLAGS="-mtune=native"
 # -arch x86-64 -arch i386  -Xarch_x86_64
 
 case $system_VER in
@@ -262,7 +245,7 @@ LDFLAGS="-L/usr/local/opt/python3/lib $LDFLAGS"
 # export PATH="$OPT_PREFIX/mingw-w64/bin:$PATH"
 export MANPATH="$OPT_PREFIX/gnu-sed/libexec/gnuman:$MANPATH" ## man gsed for gnused
 export MANPATH="$OPT_PREFIX/coreutils/libexec/gnuman:$MANPATH"
-export PATH="$OPT_PREFIX/coreutils/libexec/gnubin:$PATH"
+# export PATH="$OPT_PREFIX/coreutils/libexec/gnubin:$PATH"
 # export LDFLAGS="-L/usr/local/Cellar/gcc/7.2.0/lib/gcc/7  $LDFLAGS" 
 # export CPPFLAGS="-I/usr/local/Cellar/gcc/7.2.0/lib/gcc/7/gcc/x86_64-apple-darwin17.0.0/7.2.0/include  $LDFLAGS" 
 
@@ -288,7 +271,7 @@ export PATH="$OPT_PREFIX/qt/bin:$PATH"
 export PATH="/Library/Developer/Toolchains/swift-latest.xctoolchain/usr/bin:$PATH"
 
 # TOMEE-PLUS
-export PATH="$PATH:$OPT_PREFIX/tomee-plus/libexec/bin"
+# export PATH="$PATH:$OPT_PREFIX/tomee-plus/libexec/bin"
 
 # Node.js support
 # REF: https://nodesource.com/blog/configuring-your-npmrc-for-an-optimal-node-js-environment/
@@ -448,7 +431,6 @@ alias lr='ls -R | grep ":$" | sed -e '\''s/:$//'\'' -e '\''s/[^-][^\/]*\//--/g'\
 #   showa: to remind yourself of an alias (given some part of it)
 #   ------------------------------------------------------------
     showa () { /usr/bin/grep --color=always -i -a1 $@ ~/Library/init/bash/aliases.bash | grep -v '^\s*$' | less -FSRXc ; }
-
 
 #   -------------------------------
 #   3.  FILE AND FOLDER MANAGEMENT
@@ -1004,9 +986,6 @@ function hcl() {
     ls -l $HADOOP_CONFIG | grep xml
      echo "Hadoop Config Folder : "+HADOOP_CONFIG
 }
-
-# Finished adapting your PATH environment variable for use with MacPorts.
-export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
 
 function cmacabi() { 
     ## Check whether you are booting in 64bit firmware
@@ -2331,7 +2310,7 @@ EOF
 }
 
 function bot() {
-    local BOT_PATH=~/work/bottles/tmpbot/"$1"
+    local BOT_PATH="~/work/bottles/tmpbot/$1"
     mkdir -p $BOT_PATH;cd $BOT_PATH
     brew info "$1" > message.txt
     uname -ovr >> message.txt
@@ -2971,10 +2950,8 @@ function unlikeg() {
 
 ## NOTE :
 alias jp3="python3 /usr/local/lib/python3.6/site-packages/jupyter.py notebook"
-# export PATH="/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS6.1.sdk/usr/include/:$PATH"
-export PATH="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/4.2/include:$PATH"
-##/bin/cp /usr/local/Cellar/gettext/0.19.8.1/lib/libintl.8.dylib /usr/local/lib/libintl.8.dylib
-## Perl5 upgrade // Run once ?
+
+## Perl5 upgrade // Run once 
 # PERL_MM_OPT="INSTALL_BASE=$HOME/perl5" cpan local::lib
 # echo 'eval "$(perl -I$HOME/perl5/lib/perl5 -Mlocal::lib)"' >> ~/.bash_profile
 
@@ -2984,7 +2961,6 @@ export PATH="$HOME/.cargo/bin:$PATH"
 export WELD_HOME="~/.weld"
 
 ## Reset lib prioirty
-export PATH="$PATH:/Volumes/data/WorkSpace"
 alias airport="/System/Library/PrivateFrameworks/Apple80211.framework/Resources/airport"
 alias nets="/usr/sbin/networksetup -listallhardwareports"
 export PATH="$UsrPATH/$UsrNAME/work/.npm/bin/:$PATH"
@@ -3071,18 +3047,18 @@ function linkopts() {
 
 # LDFLAGS="-L/usr/local/lib -L$(brew --prefix e2fsprogs)/lib $LDFLAGS"
 declare -a liblist=(
-    "gcc" "openssl" "openssl@1.1" "xz" "zlib" "bison" #"bzip2" 
-    "gmp" "mpfr" "llvm" "ncurses"
-    "boost" "boost-mpi" "boost-python" "open-mpi" "tbb"
-    "gettext"  #"readline"
-    "lapack" "openblas"
-    "libkml" "libtool" "libunistring" "libiconv"
-    "binutils" "sqlite" "icu4c"
-    "thrift" "libarchive" ## for osquery
-    "opencl" "grt"
-    "suite-sparse" "valgrind" "aws-sdk-cpp"
-    "python3"
-    "rtmpdump" "libmetalink" ## for powerful curl
+    # "gcc" "openssl" "openssl@1.1" "xz" "zlib" "bison" #"bzip2" 
+    # "gmp" "mpfr" "llvm" "ncurses"
+    # "boost" "boost-mpi" "boost-python" "open-mpi" "tbb"
+    # "gettext"  #"readline"
+    # "lapack" "openblas"
+    # "libkml" "libtool" "libunistring" "libiconv"
+    # "binutils" "sqlite" "icu4c"
+    # "thrift" "libarchive" ## for osquery
+    # "opencl" "grt"
+    # "suite-sparse" "valgrind" "aws-sdk-cpp"
+    # "python3"
+    # "rtmpdump" "libmetalink" ## for powerful curl
     )
 
 function printlibs {
@@ -3141,15 +3117,18 @@ bootlibs >/dev/null
 
 #   Set Global Paths
 #   ------------------------------------------------------------
-export PATH="$PATH:/bin:/sbin:/usr/include:/usr/lib"
+export PATH="/bin:/sbin:/usr/bin:$PATH"
+export PATH="/usr/include:/usr/lib:$PATH"
 #   Set Local Paths, ensure local path wil lbe ahead of all other path
 #   ------------------------------------------------------------
-export PATH="/usr/local/bin:/usr/local:/usr/local/sbin:/usr/local/include:/usr/local/lib:$PATH"
+export PATH="/usr/local/bin:/usr/local:/usr/local/sbin:/usr/local/include:/usr/local/lib:/opt/aws/bin:$PATH"
 #   Set Brew Paths, ensure local path will be ahead of local path
-export PATH="$BREW_PREFIX/bin;$BREW_PREFIX/sbin:$BREW_PREFIX/lib;$BREW_PREFIX/include;$PATH"
+# export PATH="$BREW_PREFIX/bin:$PATH"
+# export PATH="$BREW_PREFIX/sbin:$PATH"
+# export PATH="$BREW_PREFIX/lib:$PATH"
+# export PATH="$BREW_PREFIX/include:$PATH"
 export MANPATH="$BREW_PREFIX:/share/man:$MANPATH"
 export INFOPATH="$BREW_PREFIX/share/info:$INFOPATH"
-export PATH="$PATH:/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/opt/aws/bin:/usr/local/bin"
 export LDFALGS="-L/home/linuxbrew/.linuxbrew/lib $LDFALGS"
 export CPPFALGS="-L/home/linuxbrew/.linuxbrew/lib $LDFALGS"
 
@@ -3166,3 +3145,28 @@ function cumakes() {
     cmake -G 'Unix Makefiles' -DCMAKE_CXX_FLAGS=-isystem -DCMAKE_INSTALL_PREFIX=/usr/local/Cellar/$1
     make -j$PACORES -k
 }
+
+
+
+# Finished adapting your PATH environment variable for use with MacPorts.
+# export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
+#### Completed OS related script #### 
+# export PATH="$PATH:/Volumes/data/WorkSpace"
+    ## For mac -- To view du like linux 
+    # function duh () {
+    #   du -k $1 $2 $3 $4 | awk '{if($1>1024){r=$1%1024;if(r!=0)
+    #      {sz=($1-r)/1024}else{sz=$1/1024}print sz"Mt"$2;}
+    #      else{print $1"Kt"$2}}'
+    # } 
+    # alias du=duh
+
+# alias find="gfind" ## [Waring Ignored] gfind: invalid argument `-1d' to `-mtime'
+# alias time="gtime -v"
+# alias tar=gtar
+# alias xargs=gxargs ## Using GNU's xargs to enable -i feature.
+# ln -s /usr/local/bin/python3 /usr/local/bin/python 
+# alias python=python3 
+# export PATH="/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS6.1.sdk/usr/include/:$PATH"
+# export PATH="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/4.2/include:$PATH"
+##/bin/cp /usr/local/Cellar/gettext/0.19.8.1/lib/libintl.8.dylib /usr/local/lib/libintl.8.dylib
+
