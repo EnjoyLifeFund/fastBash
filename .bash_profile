@@ -133,9 +133,11 @@ if [ "$(uname -s)" == "Darwin" ]; then
     system_VER=64
     LTOFLAGS="" #-flto " # -m32 -fopenmp  -m64 -m32 
     JAVA_HOME=$(/usr/libexec/java_home)
-    COLOR_FLAG="--color=auto"
+    # COLOR_FLAG="--color=auto"
     export BREW_PREFIX="/usr/local"
+    
     alias make="gmake $MAKEJOBS"
+    alias uname="guname" ### To enable -o flag.
     # export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-9.jdk/Contents/Home
     # export JAVA6_HOME="/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home"
     # export JAVA8_HOME="/Library/Java/JavaVirtualMachines/jdk1.8.0_131.jdk/Contents/Home/jre"
@@ -155,12 +157,14 @@ alias bp3='python3 setup.py bdist > dist.log;python3 setup.py install'
 # http://www.netlib.org/benchmark/hpl/results.html
 
 #https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/i386-and-x86_002d64-Options.html
-export CPUFLAGS="-msseregparm  -mmmx -msse -msse2 -msse3 -maes -mtune=native -mmovbe"
-export MachineFLAGS="-mfpmath=both -masm=intel -mo-align-double -m128bit-long-double $LTOFLAGS $CPUFLAGS" # -lpthread
-export MATHFLAGS="-ffast-math -Ofast -fno-signed-zeros -ffp-contract=fast $MachineFLAGS " #-mfpmath=sse+387 
+
+### DANGER : -mo-align-double <--- This CPU flag may cause non-executable 
+export CPUFLAGS=" -mtune=native -mmovbe -mfpmath=both -masm=intel -mmmx -msse -msse2 -msseregparm   -msse3 -m128bit-long-double -maes -mfpmath=sse+387 "
+export MachineFLAGS="$LTOFLAGS $CPUFLAGS" # 
+export MATHFLAGS="-ffast-math -Ofast -fno-signed-zeros -ffp-contract=fast $MachineFLAGS "
 ### DEFAULT FLAGS SUPPORT
 ##http://www.netlib.org/benchmark/hpl/results.html #-isystem /usr/include 
-export CFLAGS="-fomit-frame-pointer -funroll-loops  $MATHFLAGS -isystem $BREW_PREFIX/include"
+export CFLAGS="-fomit-frame-pointer -funroll-loops  $MATHFLAGS -isystem $BREW_PREFIX/include -lpthread"
 export CXXFLAGS="$MATHFLAGS "
 export FFLAGS="$CFLAGS  $MATHFLAGS "
 
@@ -2310,7 +2314,7 @@ EOF
 }
 
 function bot() {
-    local BOT_PATH="~/work/bottles/tmpbot/$1"
+    local BOT_PATH=~/work/bottles/tmpbot/"$1"
     mkdir -p $BOT_PATH;cd $BOT_PATH
     brew info "$1" > message.txt
     uname -ovr >> message.txt
@@ -3115,18 +3119,21 @@ setcc
 printlibs > /dev/null
 bootlibs >/dev/null
 
+#   ------------------------------------------------------------
 #   Set Global Paths
 #   ------------------------------------------------------------
 export PATH="/bin:/sbin:/usr/bin:$PATH"
 export PATH="/usr/include:/usr/lib:$PATH"
-#   Set Local Paths, ensure local path wil lbe ahead of all other path
-#   ------------------------------------------------------------
 export PATH="/usr/local/bin:/usr/local:/usr/local/sbin:/usr/local/include:/usr/local/lib:/opt/aws/bin:$PATH"
-#   Set Brew Paths, ensure local path will be ahead of local path
-# export PATH="$BREW_PREFIX/bin:$PATH"
-# export PATH="$BREW_PREFIX/sbin:$PATH"
-# export PATH="$BREW_PREFIX/lib:$PATH"
-# export PATH="$BREW_PREFIX/include:$PATH"
+#   ------------------------------------------------------------
+
+#   ------------------------------------------------------------
+#   Brew first Paths : Comment them out for fresh system.
+#   ------------------------------------------------------------
+export PATH="$BREW_PREFIX/bin:$PATH"
+export PATH="$BREW_PREFIX/sbin:$PATH"
+export PATH="$BREW_PREFIX/lib:$PATH"
+export PATH="$BREW_PREFIX/include:$PATH"
 export MANPATH="$BREW_PREFIX:/share/man:$MANPATH"
 export INFOPATH="$BREW_PREFIX/share/info:$INFOPATH"
 export LDFALGS="-L/home/linuxbrew/.linuxbrew/lib $LDFALGS"
