@@ -46,13 +46,15 @@
 alias xxargs='xargs -n 1 -P $PACORES'
 alias sll=subl
 
-CCSET="gcc"
+CCSET="mpicc"
 GCC_VER=7
 function setcc() {
     echo "PACORES="$PACORES
     echo "[Info] setcc ,Function to change compiler settings. CCSET="$CCSET
     case $CCSET in
         "gccx") ## GCC ##
+			#10/06 GCC ONLY? , these flags may further import program performance when we are using gcc-7, tested on Debian9/Xeon CPU  ## 
+			export GCC_FLAGS=" -mmovbe  -m128bit-long-double   -msseregparm -mfpmath=sse+387 -mfpmath=both"
             FC="gfortran-$GCC_VER";CC="gcc-$GCC_VER";CXX="gcc-$GCC_VER" ;CPP="gcc-$GCC_VER -E";CXXCPP="gcc-$GCC_VER -E"
             export HOMEBREW_CC="gcc-$GCC_VER"
         ;;
@@ -67,6 +69,7 @@ function setcc() {
             HOMEBREW_CC="mpicc"; HOMEBREW_CXX="mpicxx"
         ;;
         "gcc") ## GCC7 ##
+			export GCC_FLAGS=" -mmovbe  -m128bit-long-double   -msseregparm -mfpmath=sse+387 -mfpmath=both"
             FC="gfortran";  CC="gcc" ;CXX="gcc" ; 
             CPP="gcc -E" ; CXXCPP=" gcc -E" ;
             export HOMEBREW_CC="cc"
@@ -131,7 +134,7 @@ if [ "$(uname -s)" == "Darwin" ]; then
     alias f='open -a Finder ./'                
     READLINK="greadlink"
     system_VER=64
-    LTOFLAGS="" #-flto " # -m32 -fopenmp  -m64 -m32 
+    LTOFLAGS="-flto" # " # -m32 -fopenmp  -m64 -m32 
     JAVA_HOME=$(/usr/libexec/java_home)
     # COLOR_FLAG="--color=auto"
     export BREW_PREFIX="/usr/local"
@@ -159,7 +162,7 @@ alias bp3='python3 setup.py bdist > dist.log;python3 setup.py install'
 #https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/i386-and-x86_002d64-Options.html
 
 ### DANGER : -mo-align-double <--- This CPU flag may cause non-executable 
-export CPUFLAGS=" -mtune=native -mmovbe -mfpmath=both -masm=intel -mmmx -msse -msse2 -msseregparm   -msse3 -m128bit-long-double -maes -mfpmath=sse+387 "
+export CPUFLAGS="$GCC_FLAGS -mtune=native  -masm=intel -mmmx -msse -msse2  -msse3 -maes"
 export MachineFLAGS="$LTOFLAGS $CPUFLAGS" # 
 export MATHFLAGS="-ffast-math -Ofast -fno-signed-zeros -ffp-contract=fast $MachineFLAGS "
 ### DEFAULT FLAGS SUPPORT
@@ -3051,16 +3054,16 @@ function linkopts() {
 
 # LDFLAGS="-L/usr/local/lib -L$(brew --prefix e2fsprogs)/lib $LDFLAGS"
 declare -a liblist=(
-    # "gcc" "openssl" "openssl@1.1" "xz" "zlib" "bison" #"bzip2" 
-    # "gmp" "mpfr" "llvm" "ncurses"
+	#"gcc" "bzip2" "readline"
+    "openssl" "openssl@1.1" "xz" "zlib" "bison" 
+    "gmp" "mpfr" "llvm" "ncurses" "gettext"  
+    "lapack" "openblas"
     # "boost" "boost-mpi" "boost-python" "open-mpi" "tbb"
-    # "gettext"  #"readline"
-    # "lapack" "openblas"
     # "libkml" "libtool" "libunistring" "libiconv"
     # "binutils" "sqlite" "icu4c"
-    # "thrift" "libarchive" ## for osquery
+    # "thrift" "libarchive"  "aws-sdk-cpp" ## for osquery
     # "opencl" "grt"
-    # "suite-sparse" "valgrind" "aws-sdk-cpp"
+    # "suite-sparse" "valgrind"
     # "python3"
     # "rtmpdump" "libmetalink" ## for powerful curl
     )
