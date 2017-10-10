@@ -46,15 +46,21 @@
 alias xxargs='xargs -n 1 -P $PACORES'
 alias sll=subl
 
-CCSET="mpicc"
+SETCC="mpicc"
 GCC_VER=7
 function setcc() {
     echo "PACORES="$PACORES
-    echo "[Info] setcc ,Function to change compiler settings. CCSET="$CCSET
-    case $CCSET in
+    echo "[Info] setcc ,Function to change compiler settings. SETCC="$SETCC
+    case $SETCC in
+        "gcc") ## DEFAULT ##
+			export GCC_FLAGS=" -mmovbe  -m128bit-long-double   -msseregparm -mfpmath=sse+387 -mfpmath=both -lpthread"
+            FC="gfortran";  CC="gcc" ;CXX="gcc" ; 
+            CPP="gcc -E" ; CXXCPP=" gcc -E" ;
+            export HOMEBREW_CC="cc"
+        ;;    
         "gccx") ## GCC ##
 			#10/06 GCC ONLY? , these flags may further import program performance when we are using gcc-7, tested on Debian9/Xeon CPU  ## 
-			export GCC_FLAGS=" -mmovbe  -m128bit-long-double   -msseregparm -mfpmath=sse+387 -mfpmath=both"
+			export GCC_FLAGS="-mmovbe  -m128bit-long-double   -msseregparm -mfpmath=sse+387 -mfpmath=both  -lpthread"
             FC="gfortran-$GCC_VER";CC="gcc-$GCC_VER";CXX="gcc-$GCC_VER" ;CPP="gcc-$GCC_VER -E";CXXCPP="gcc-$GCC_VER -E"
             export HOMEBREW_CC="gcc-$GCC_VER"
         ;;
@@ -62,24 +68,19 @@ function setcc() {
             FC="gfortran";CC="cc";CXX="cc" ;CPP="gcc -E";CXXCPP="gcc -E"
             export HOMEBREW_CC="clang"
         ;;
-        "mpicc") ## MPICC ##
-        ## MPI version ##
-            FC="mpifort"; CC="mpicc"; CXX="mpicxx" ; CPP="mpicc -E"  ;CXXCPP="clang -E"  
+        "mpicc") ## MPICC version ##
+            FC="mpifort"; CC="mpicc"; CXX="mpicc" ; CPP="mpic++ -E "  ;CXXCPP="mpicc -E"  
             MPIFC="mpifort";MPICC="mpicc";MPICPP="mpicc -E" ;MPICXX="mpicxx"
+            # FC="mpifort"; CC="mpicc"; CXX="mpicxx" ; CPP="mpicc -E"  ;CXXCPP="clang -E"  
+            # MPIFC="mpifort";MPICC="mpicc";MPICPP="mpicc -E" ;MPICXX="mpicxx"
             HOMEBREW_CC="mpicc"; HOMEBREW_CXX="mpicxx"
         ;;
-        "gcc") ## GCC7 ##
-			export GCC_FLAGS=" -mmovbe  -m128bit-long-double   -msseregparm -mfpmath=sse+387 -mfpmath=both"
-            FC="gfortran";  CC="gcc" ;CXX="gcc" ; 
-            CPP="gcc -E" ; CXXCPP=" gcc -E" ;
-            export HOMEBREW_CC="cc"
-        ;;    
         *) ## NO Setting as default ##
         ;;  
     esac
     # brew --env
 }
-export MAKEJOBS="-j16"
+export MAKEJOBS="-j8"
 alias cgrep="grep --color=always"
 function cheditor() {
     echo "[Info] cheditor, Script to change your default terminal editor"
@@ -134,13 +135,17 @@ if [ "$(uname -s)" == "Darwin" ]; then
     alias f='open -a Finder ./'                
     READLINK="greadlink"
     system_VER=64
-    LTOFLAGS="-flto" # " # -m32 -fopenmp  -m64 -m32 
+    LTOFLAGS= # "-flto" #-m64"  # -m32 -fopenmp  -m64 -m32 
     JAVA_HOME=$(/usr/libexec/java_home)
     # COLOR_FLAG="--color=auto"
     export BREW_PREFIX="/usr/local"
     
     alias make="gmake $MAKEJOBS"
     alias uname="guname" ### To enable -o flag.
+	alias find="gfind" ## [Waring Ignored] gfind: invalid argument `-1d' to `-mtime'
+	alias time="gtime -v"
+	alias tar="gtar"
+	alias xargs="gxargs" ## Using GNU's xargs to enable -i feature.
     # export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-9.jdk/Contents/Home
     # export JAVA6_HOME="/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home"
     # export JAVA8_HOME="/Library/Java/JavaVirtualMachines/jdk1.8.0_131.jdk/Contents/Home/jre"
@@ -162,20 +167,21 @@ alias bp3='python3 setup.py bdist > dist.log;python3 setup.py install'
 #https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/i386-and-x86_002d64-Options.html
 
 ### DANGER : -mo-align-double <--- This CPU flag may cause non-executable 
-export CPUFLAGS="$GCC_FLAGS -mtune=native  -masm=intel -mmmx -msse -msse2  -msse3 -maes"
-export MachineFLAGS="$LTOFLAGS $CPUFLAGS" # 
-export MATHFLAGS="-ffast-math -Ofast -fno-signed-zeros -ffp-contract=fast $MachineFLAGS "
+# export CPUFLAGS="$GCC_FLAGS -msse2  -masm=intel -msse3 "
+export MachineFLAGS="-mmmx -maes -msse -maes $LTOFLAGS $CPUFLAGS" # 
+export MATHFLAGS=" -ffast-math -fno-signed-zeros -ffp-contract=fast $MachineFLAGS "
 ### DEFAULT FLAGS SUPPORT
 ##http://www.netlib.org/benchmark/hpl/results.html #-isystem /usr/include 
-export CFLAGS="-fomit-frame-pointer -funroll-loops  $MATHFLAGS -isystem $BREW_PREFIX/include -lpthread"
+export CFLAGS="-Ofast -fomit-frame-pointer -funroll-loops $MATHFLAGS " 
+# -isystem $BREW_PREFIX/include ## RISKY CFLAGS
 export CXXFLAGS="$MATHFLAGS "
-export FFLAGS="$CFLAGS  $MATHFLAGS "
+export FFLAGS="$CFLAGS "
 
 ### set gcc debug flag, Default is not to use it.
 # DEBUGFLAG="-g"
 alias cpx="cc -c $LDFLAGS $DEBUGFLAG $CFLAGS -Ofast -flto"
 
-export ARCHFLAGS="-mtune=native"
+export ARCHFLAGS="-march=native"
 # -arch x86-64 -arch i386  -Xarch_x86_64
 
 case $system_VER in
@@ -219,8 +225,9 @@ export OPENBLAS_NUM_THREADS=32
 
 ## llvm support
 ## brew reinstall llvm -v --all-targets --rtti --shared --with-asan --with-clang --use-clang
-export LDFLAGS="-L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib $LDFLAGS"
-export CPPFLAGS="-I/usr/local/opt/llvm/include -I/usr/local/opt/llvm/include/c++/v1/ $CPPFLAGS"
+# export LDFLAGS="-L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib $LDFLAGS"
+# export CPPFLAGS="-I/usr/local/opt/llvm/include $CPPFLAGS" 
+# -I/usr/local/opt/llvm/include/c++/v1/  ## RISKY CPPFLAGS
 export 
 
 ## rJava Support
@@ -242,9 +249,9 @@ export CLICOLOR=1
 export TERM="xterm-color" 
 
 ## Python include/lib support
-PYVM_VER=python3.6m ## python3.6dm for debug
-CPPFLAGS="-I/usr/local/opt/python3/include/$PYVM_VER $CPPFLAGS" 
-LDFLAGS="-L/usr/local/opt/python3/lib $LDFLAGS"
+# PYVM_VER=python3.6m ## python3.6dm for debug
+# CPPFLAGS="-I/usr/local/opt/python3/include/$PYVM_VER $CPPFLAGS" 
+# LDFLAGS="-L/usr/local/opt/python3/lib $LDFLAGS"
 
 ## GNU GCC setup for OSX
 ## GNU GCC/ BINUTILS SUPPORT
@@ -333,6 +340,7 @@ export PATH="$PATH:/usr/local/mysql/bin:$CASSANDRA_HOME/bin:$FORREST_HOME/bin"
 # export TF_BINARY_URL=https://storage.googleapis.com/tensorflow/mac/gpu/tensorflow_gpu-0.12.1-py3-none-any.whl
 # https://pypi.python.org/packages/4f/8e/8f036b718c97b7a2a96f4e23fbaa55771686efaa97a56579df8d6826f7c5/tensorflow-1.3.0-cp36-cp36m-macosx_10_11_x86_64.whl
  
+VG_TMPDIR=~/.tmp/openmpi ## For valgrind 
 TMPDIR=~/.tmp/openmpi
 BOOST_ROOT="/usr/local/opt/boost"
 OpenMP_C_FLAGS=$CFLAGS
@@ -453,6 +461,7 @@ alias nofiles='echo "Total files in directory:" $(ls -1 | wc -l)'      # numFile
 alias make1mb='mkfile 1m ./1MB.dat'         # make1mb:      Creates a file of 1mb size (all zeros)
 alias make5mb='mkfile 5m ./5MB.dat'         # make5mb:      Creates a file of 5mb size (all zeros)
 alias make10mb='mkfile 10m ./10MB.dat'      # make10mb:     Creates a file of 10mb size (all zeros)
+alias fsize="find . -type f -ls -printf '\0' | sort -zk7rn | tr -d '\0'" ## fsize  : find and sort file size, accending
 
 #   cdf:  'Cd's to frontmost window of MacOS Finder
 #   ------------------------------------------------------
@@ -2543,9 +2552,9 @@ function gitadm() {
     echo "[Info]## This script helps you add files into git, default '--modified'"
     echo "[Example] gitadm deleted"
     if [[ $# -eq 0 ]] ; then
-        git ls-files --modified | xxargs git add
+        git ls-files --modified | xargs git add
     else 
-        git ls-files --"$@" | xxargs git add
+        git ls-files --"$@" | xargs git add
     fi
 }
 
@@ -2869,12 +2878,9 @@ function gotravis(){
 
 ## This script helps upgrading all installed python3 packages.
 function repip3() {
-    pip3 list |awk '{print "echo [Info]pip3 install --upgrade "$1";pip3 install --upgrade "$1}' > pip3.tmp
+    pip3 list | awk '{print "echo [Info]pip3 install --upgrade "$1";pip3 install --upgrade "$1}' > pip3.tmp
     ### some packages may gets downgraded 
-    cat pip3.tmp \ |
-    grep -vF "echo [Info]pip3 install --upgrade azure;pip3 install --upgrade azure" \|
-    grep -vF "echo [Info]pip3 install --upgrade azure-mgmt;pip3 install --upgrade azure-mgmt" \|
-    > pip3.update
+    cat pip3.tmp | grep -vF "echo [Info]pip3 install --upgrade azure;pip3 install --upgrade azure"| grep -vF "echo [Info]pip3 install --upgrade azure-mgmt;pip3 install --upgrade azure-mgmt" > pip3.update
     rm pip3.tmp
     echo "pip3 install --upgrade py4j jupyter bleach" >> pip3.update 
     echo "rm -rf ~/Library/Caches/pip" >> pip3.update
@@ -2972,12 +2978,6 @@ alias airport="/System/Library/PrivateFrameworks/Apple80211.framework/Resources/
 alias nets="/usr/sbin/networksetup -listallhardwareports"
 export PATH="$UsrPATH/$UsrNAME/work/.npm/bin/:$PATH"
 
-
-## OPT lib support
-export PATH="$OPT_PREFIX/parallel-netcdf/include:$PATH"
-export PATH="$OPT_PREFIX/openssl/lib:$PATH:"
-export PATH="$OPT_PREFIX/texinfo/bin:$PATH"
-
 ## Customized / Shared package path for multi-OS version
 export PATH="$OPT_PREFIX/opt/python3/Frameworks/Python.framework/Versions/3.6/bin:$PATH"
 
@@ -3034,6 +3034,7 @@ function getflags() {
     echo -e "@ARCHFLAGS=$ARCHFLAGS \n@CFLAGS=$CFLAGS \n@FFLAGS=$FFLAGS \n@LDFLAGS=$LDFLAGS \n@CPPFLAGS=$CPPFLAGS"
 }
 
+
 function linkopts() {
     NEXTLIB="$@"
     OPT_PREFIX=$OPT_PREFIX
@@ -3054,18 +3055,23 @@ function linkopts() {
 
 # LDFLAGS="-L/usr/local/lib -L$(brew --prefix e2fsprogs)/lib $LDFLAGS"
 declare -a liblist=(
-	#"gcc" "bzip2" "readline"
-    "openssl" "openssl@1.1" "xz" "zlib" "bison" 
-    "gmp" "mpfr" "llvm" "ncurses" "gettext"  
-    "lapack" "openblas"
-    # "boost" "boost-mpi" "boost-python" "open-mpi" "tbb"
+    # "openssl" 
+    # "openssl@1.1" 
+    # "llvm" "ncurses" 
+    # "lapack" "openblas"
+    # "boost" "boost-mpi" "boost-python"
+    # "open-mpi" "tbb"
+    # "xz" "zlib" "bison" 
+    # "gettext"  				## May cause mac running to infinite loop
+    # "gmp" "mpfr"  			## GCC related
+    #"gcc" "bzip2" "readline"
     # "libkml" "libtool" "libunistring" "libiconv"
     # "binutils" "sqlite" "icu4c"
     # "thrift" "libarchive"  "aws-sdk-cpp" ## for osquery
     # "opencl" "grt"
     # "suite-sparse" "valgrind"
     # "python3"
-    # "rtmpdump" "libmetalink" ## for powerful curl
+    # "rtmpdump" "libmetalink" ## Powerful curl related
     )
 
 function printlibs {
@@ -3117,30 +3123,30 @@ function morelibs(){
     linkopts opencv
     linkopts cython
 }
-setcc
-# keylibs
-printlibs > /dev/null
-bootlibs >/dev/null
 
 #   ------------------------------------------------------------
 #   Set Global Paths
 #   ------------------------------------------------------------
-export PATH="/bin:/sbin:/usr/bin:$PATH"
-export PATH="/usr/include:/usr/lib:$PATH"
-export PATH="/usr/local/bin:/usr/local:/usr/local/sbin:/usr/local/include:/usr/local/lib:/opt/aws/bin:$PATH"
+# export PATH="/bin:/sbin:/usr/bin:$PATH"
+# export PATH="/usr/include:/usr/lib:$PATH"
 #   ------------------------------------------------------------
 
 #   ------------------------------------------------------------
 #   Brew first Paths : Comment them out for fresh system.
 #   ------------------------------------------------------------
-export PATH="$BREW_PREFIX/bin:$PATH"
-export PATH="$BREW_PREFIX/sbin:$PATH"
-export PATH="$BREW_PREFIX/lib:$PATH"
-export PATH="$BREW_PREFIX/include:$PATH"
-export MANPATH="$BREW_PREFIX:/share/man:$MANPATH"
-export INFOPATH="$BREW_PREFIX/share/info:$INFOPATH"
+# export PATH="/usr/local/bin:/usr/local:/usr/local/sbin:/usr/local/include:/usr/local/lib:/opt/aws/bin:$PATH"
+# export PATH="$BREW_PREFIX/bin:$PATH"
+# export PATH="$BREW_PREFIX/sbin:$PATH"
+# export PATH="$BREW_PREFIX/lib:$PATH"
+# export PATH="$BREW_PREFIX/include:$PATH"
+# export MANPATH="$BREW_PREFIX:/share/man:$MANPATH"
+# export INFOPATH="$BREW_PREFIX/share/info:$INFOPATH"
 export LDFALGS="-L/home/linuxbrew/.linuxbrew/lib $LDFALGS"
-export CPPFALGS="-L/home/linuxbrew/.linuxbrew/lib $LDFALGS"
+export CPPFALGS="-I/home/linuxbrew/.linuxbrew/lib $CPPFALGS"
+setcc
+# keylibs
+printlibs > /dev/null
+bootlibs >/dev/null
 
 ### CMAKE FLAGS SUPPORT
 export CMAKE_CXX_FLAGS="-isystem $CPPFLAGS /usr/local/include" 
@@ -3170,10 +3176,6 @@ function cumakes() {
     # } 
     # alias du=duh
 
-# alias find="gfind" ## [Waring Ignored] gfind: invalid argument `-1d' to `-mtime'
-# alias time="gtime -v"
-# alias tar=gtar
-# alias xargs=gxargs ## Using GNU's xargs to enable -i feature.
 # ln -s /usr/local/bin/python3 /usr/local/bin/python 
 # alias python=python3 
 # export PATH="/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS6.1.sdk/usr/include/:$PATH"
