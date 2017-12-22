@@ -1,4 +1,41 @@
 #!/bin/bash
+## Study REF-> https://explainshell.com/
+## Study REF-> https://developer.apple.com/library/content/documentation/OpenSource/Conceptual/ShellScripting/performance/performance.html
+## Study REF-> https://aadrake.com/command-line-tools-can-be-235x-faster-than-your-hadoop-cluster.html
+
+###!/usr/local/bin/dash
+## BASH VS DASH - https://www.jpsdomain.org/public/2008-JP_bash_vs_dash.pdf
+##TODO: DASH PORTABILITY SUPPORT (For Loop -> While Loop) 
+#REF1: https://unix.stackexchange.com/questions/148035/is-dash-or-some-other-shell-faster-than-bash
+#REF2: https://askubuntu.com/questions/621981/for-loop-syntax-in-shell-script
+#REF3: https://wiki.archlinux.org/index.php/Dash
+#REF4: https://lyness.io/the-functional-and-performance-differences-of-sed-awk-and-other-unix-parsing-utilities
+
+#!/bin/sh
+# number=0
+# while [ $number -lt 10 ]
+# do
+#         printf "\t%d" "$number"
+#         number=$((number + 1))
+# done
+
+# export LC_ALL=C 
+export LC_ALL=en_US.UTF-8
+export LoginDay=$(date +%F)
+## LC_ALL=en_US or C?  To speed up in byte?
+# https://unix.stackexchange.com/questions/303157/is-there-something-wrong-with-my-script-or-is-bash-much-slower-than-python/303167#303167
+## Drawbacks 
+# $ LC_ALL=en_US sort <<< $'a\nb\nA\nB'
+# a
+# A
+# b
+# B
+# $ LC_ALL=C sort <<< $'a\nb\nA\nB'
+# A
+# B
+# a
+# b
+
 # Authors : 
 # [Ralic Lo (ralic.lo.eng@ieee.org)
 # [NATHANIEL LANDAU] https://natelandau.com/nathaniel-landau-resume/
@@ -43,24 +80,46 @@
 ##                   -- Other options : g++ -E or gcc -E
 ##                   -- It's ok to replace gcc c++ by gcc-7
 
-alias xxargs='xargs -n 1 -P $PACORES'
-alias sll=subl
+### Defines commands to be excuted after parsing all scripts
+### (For script Hoisting)
+function START_UP@BEGIN() {
+echo "[Info] Running boot scripts"	 
+	SETCC="gcc"
+	GCC_VER=7
+	alias xxargs='xargs -n 1 -P $PACORES'
+	alias sll=subl
+}
 
-SETCC="mpicc"
-GCC_VER=7
+START_UP@BEGIN
+
+function START_UP@END() {
+	printlibs > /dev/null
+	bootlibs >/dev/null
+	setcc
+	cheditor vi > /dev/null
+	export MAKEJOBS="-j16"
+	alias cgrep="grep --color=always"
+	neofetch
+# export LDFLAGS="-L/usr/local/Cellar/gcc/7.2.0/lib/gcc/7 $LDFLAGS" 
+# export CPPFLAGS="-I/usr/local/Cellar/gcc/7.2.0/lib/gcc/7/gcc/x86_64-apple-darwin17.0.0/7.2.0/include  $CPPFLAGS" 
+# export CPPFLAGS="-I/usr/local/Cellar/gcc/7.2.0/include/c++/7.2.0/tr1 $CPPFLAGS"
+	# macdev	
+}
+
 function setcc() {
-    echo "PACORES="$PACORES
-    echo "[Info] setcc ,Function to change compiler settings. SETCC="$SETCC
+	if [[ $# -eq 1 ]] ; then
+	    SETCC=$1
+    fi
+    
     case $SETCC in
         "gcc") ## DEFAULT ##
-			export GCC_FLAGS=" -mmovbe  -m128bit-long-double   -msseregparm -mfpmath=sse+387 -mfpmath=both -lpthread"
+            export GCC_FLAGS=" -mmovbe  -m128bit-long-double   -msseregparm -mfpmath=sse+387 -mfpmath=both -lpthread"
             FC="gfortran";  CC="gcc" ;CXX="gcc" ; 
             CPP="gcc -E" ; CXXCPP=" gcc -E" ;
-            export HOMEBREW_CC="cc"
         ;;    
         "gccx") ## GCC ##
 			#10/06 GCC ONLY? , these flags may further import program performance when we are using gcc-7, tested on Debian9/Xeon CPU  ## 
-			export GCC_FLAGS="-mmovbe  -m128bit-long-double   -msseregparm -mfpmath=sse+387 -mfpmath=both  -lpthread"
+	    export GCC_FLAGS="-mmovbe  -m128bit-long-double   -msseregparm -mfpmath=sse+387 -mfpmath=both  -lpthread"
             FC="gfortran-$GCC_VER";CC="gcc-$GCC_VER";CXX="gcc-$GCC_VER" ;CPP="gcc-$GCC_VER -E";CXXCPP="gcc-$GCC_VER -E"
             export HOMEBREW_CC="gcc-$GCC_VER"
         ;;
@@ -78,10 +137,11 @@ function setcc() {
         *) ## NO Setting as default ##
         ;;  
     esac
-    # brew --env
+    ## echo with $'' strings  = ANSI C Quoting:
+echo "$(tput setaf 2)"$'[Info] setcc (gcc/gccx/clang/mpicc). To change compiler in BREW.
+       Type brew --env for details,SETCC='$SETCC',PACORES='$PACORES"$(tput sgr0)"
 }
-export MAKEJOBS="-j8"
-alias cgrep="grep --color=always"
+
 function cheditor() {
     echo "[Info] cheditor, Script to change your default terminal editor"
     if [[ $# -eq 0 ]] ; then
@@ -92,16 +152,26 @@ function cheditor() {
     export TEXT_Editor=$VAR_EDITOR
     export EDITOR=$VAR_EDITOR
 }
+
+# function checkOS() {
+# }
 # export HOMEBREW_BUILD_FROM_SOURCE=1
 ### For Linux/Debian
 if [ "$(uname -s)" == "Linux" ]; then
-    cheditor
     ## PARALLEL PROCESSING for lz4dir/xz4dir 
     PACORES=$(( $(grep -c ^processor /proc/cpuinfo) )) 
     PACORES=$(( $PACORES * 2 ))
+
+    if [[ $(uname -r) == *"amzn1"* ]]; then
+	  echo " RUNNING AWS LINUX!"
+    setcc gcc
+	fi
     UsrPATH="/home"
     UsrNAME=$(whoami)
     ## Linuxbrew Support
+    export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
+    export MANPATH="/home/linuxbrew/.linuxbrew/share/man:$MANPATH"
+    export INFOPATH="/home/linuxbrew/.linuxbrew/share/info:$INFOPATH"
     #export MASTERUSER= $(whoami)
      # sudo mkdir -p /home/linuxbrew
      # sudo ln -s -f /home/linuxbrew/.linuxbrew/usr /usr/local/.linuxbrew
@@ -114,9 +184,9 @@ if [ "$(uname -s)" == "Linux" ]; then
     # f:            Opens current directory in Linux Finder
     alias f='xdg-open ./'
     READLINK="readlink"
-    JAVA_HOME="$OPT_PREFIX/jdk"
-    system_VER=64
-    LTOFLAGS="-flto" # -m32 # -m64 
+    # JAVA_HOME="$OPT_PREFIX/jdk"
+    # export JAVA_HOME="/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre"
+    # LTOFLAGS="-flto" # -m32 # -m64 
     alias make="make $MAKEJOBS"
     COLOR_FLAG="--color=auto"
     export BREW_PREFIX="/home/linuxbrew/.linuxbrew"
@@ -124,7 +194,6 @@ fi
 
 ### For MacOS/Darwin
 if [ "$(uname -s)" == "Darwin" ]; then
-    cheditor
     MACOSX_DEPLOYMENT_TARGET=$(sw_vers | grep ProductVersion | awk '{print $2}')
     export MACOSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET"
     # export MACOSX_DEPLOYMENT_TARGET=10.5
@@ -234,34 +303,28 @@ export
 #R CMD javareconf JAVA_CPPFLAGS=-I/System/Library/Frameworks/JavaVM.framework/Headers
 #R CMD javareconf JAVA_CPPFLAGS="-I/System/Library/Frameworks/JavaVM.framework/Headers -I$(/usr/libexec/java_home | grep -o '.*jdk')"
 
-## Java 9 Support 
-JAVA_9="/Library/Java/JavaVirtualMachines/jdk-9.jdk/Contents/Home"
-
 ## Setting Locale
 ## locale
 # https://www.gnu.org/savannah-checkouts/gnu/libc/manual/html_node/Locale-Categories.html
 
 echo "________________________________________________________________________________"
-export LC_ALL=en_US.UTF-8
 uname -a
 ## Change CL to be colored for MAC
 export CLICOLOR=1
 export TERM="xterm-color" 
 
 ## Python include/lib support
-# PYVM_VER=python3.6m ## python3.6dm for debug
-# CPPFLAGS="-I/usr/local/opt/python3/include/$PYVM_VER $CPPFLAGS" 
-# LDFLAGS="-L/usr/local/opt/python3/lib $LDFLAGS"
-
-## GNU GCC setup for OSX
+PYVM_VER=python3.6m ## python3.6dm for debug
+CPPFLAGS="-I/usr/local/opt/python3/include/$PYVM_VER $CPPFLAGS" 
+LDFLAGS="-L/usr/local/opt/python3/lib $LDFLAGS"
+CPPFLAGS="-I/usr/local/Cellar/python3/3.6.3/Frameworks/Python.framework/Versions/3.6/include/python3.6m $CPPFLAGS"
+## GNU GCC support for OSX
 ## GNU GCC/ BINUTILS SUPPORT
 ## brew install binutils
 # export PATH="$OPT_PREFIX/mingw-w64/bin:$PATH"
 export MANPATH="$OPT_PREFIX/gnu-sed/libexec/gnuman:$MANPATH" ## man gsed for gnused
 export MANPATH="$OPT_PREFIX/coreutils/libexec/gnuman:$MANPATH"
 # export PATH="$OPT_PREFIX/coreutils/libexec/gnubin:$PATH"
-# export LDFLAGS="-L/usr/local/Cellar/gcc/7.2.0/lib/gcc/7  $LDFLAGS" 
-# export CPPFLAGS="-I/usr/local/Cellar/gcc/7.2.0/lib/gcc/7/gcc/x86_64-apple-darwin17.0.0/7.2.0/include  $LDFLAGS" 
 
 ## X11 Support
 export PATH="/opt/X11/bin:$PATH"
@@ -279,7 +342,7 @@ export PATH="/Applications/RStudio.app/Contents/MacOS:$PATH"
 export PATH="$OPT_PREFIX/qt/bin:$PATH"
 
 ## MAC Developer Commandline Support
-# export PATH=/Library/Developer/CommandLineTools/usr/bin:$PATH
+export PATH="/Library/Developer/CommandLineTools/usr/bin:$PATH"
 
 ##SWIFT SUPPORT
 export PATH="/Library/Developer/Toolchains/swift-latest.xctoolchain/usr/bin:$PATH"
@@ -319,7 +382,6 @@ alias pypath3="export PYTHONPATH=/usr/local/lib/python3.6/site-packages"
 alias pypath2="export PYTHONPATH=/usr/local/lib/python2.7/site-packages"
 alias xpath="echo /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/"
 
-JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_144.jdk/Contents/Home/jre
 SPARK_HOME="$OPT_PREFIX/apache-spark/libexec"
 export PYSPARK_DRIVER_PYTHON=python3
 # export PYSPARK_DRIVER_PYTHON_OPTS=notebook
@@ -376,21 +438,20 @@ GNUTLS_CFLAGS=$CFLAGS
 #   Change Prompt
 #   ------------------------------------------------------------
 
-    #Git branch support
-    #https://github.com/jimeh/git-aware-prompt
-    # export GITAWAREPROMPT=~/.bash/git-aware-prompt
-    # source "${GITAWAREPROMPT}/main.sh"
-    export PS1="________________________________________________________________________________\n \[\e[1;13m\]\w\[\e[0m\] @ \[\e[1;35m\]\h\[\e[0m\] (\[\e[1;92m\]\u\[\e[0m\]) \[$txtcyn\]\$git_branch\[$txtred\]\$git_dirty\[\e[0m\] \n|=> "
-    export PS2="| => "
-    export SUDO_PS1="________________________________________________________________________________\n \[\e[1;13m\]\w\[\e[0m\] @ \[\e[1;35m\]\h\[\e[0m\] (\[\e[1;92m\]\u\[\e[0m\]) \[$txtcyn\]\$git_branch\[$txtred\]\$git_dirty\[\e[0m\] \n|=> "
-    export SUDO_PS2="| => "
-
+# if [ $0 = "dash" ]; then
+USER=$(id -un)
+HOSTNAME=$(uname -n)
+export PS1='________________________________________________________________________________
+$(tput bold 6)$PWD $(tput setaf 6)@$HOSTNAME $(tput setaf 4)($USER)$(tput sgr0)
+=>'
+export SUDO_PS=$PS1
+#fi
 
 #   Add color to terminal
 #   (this is all commented out as I use Mac Terminal Profiles)
 #   from http://osxdaily.com/2012/02/21/add-color-to-the-terminal-in-mac-os-x/
 #   ------------------------------------------------------------
-#   export CLICOLOR=1
+#  export CLICOLOR=1
 #   export LSCOLORS=ExFxBxDxCxegedabagacad
 
 #   -----------------------------
@@ -499,6 +560,7 @@ EOT
             *.tgz)       tar xzf $1     ;;
             *.zip)       unzip $1       ;;
             *.Z)         uncompress $1  ;;
+			*.xz)	     xz -d $1		;;
             *.7z)        7z x $1        ;;
             *.lz4)       unlz4 $1       ;;
             *.lzma)      tar --lzma -xvf f $1 ;;
@@ -698,7 +760,7 @@ function httpDebug () { /usr/bin/curl $@ -o /dev/null -w "dns: %{time_namelookup
 DU=/usr/local/bin/dup.sh
 
 
-SHELL_HISTORY=~/.dropshell_history
+SHELL_HISTORY=~/.dropshell_history ##  .dropbox_uploader 
 DU_OPT="-q"
 DU_VERSION="0.2"
 
@@ -1023,10 +1085,21 @@ function ccpu () {
     fi
 }
 
+
+function cpci() {
+	ls -Ral /sys/devices/pci*
+
+}
+
 function cgpu () {
     echo "[Info] cgpu, Function to show the gpu's strength"
     if [ "$(uname -s)" == "Linux" ]; then
             lspci  -v -s  $(lspci | grep VGA | cut -d" " -f 1) 
+            ## For Nvidia
+            nvidia-smi
+            nvidia-smi -q
+            ## Other tools
+            clinfo
     elif [ "$(uname -s)" == "Darwin" ]; then
            glxinfo > gpuinfo && cat gpuinfo
            echo "> cat gpuinfo < to see result"
@@ -1050,8 +1123,22 @@ function rcf () {
     awk '{ print "Rows : "NR"\nColumns : "NF }' $1
 }
 
-function rfile () {
-    echo "[Info] rfile, Function that transverse a file."
+function find01() {
+	echo "[Info] find01, Function to find number of 0 and 1 in a file"
+	awk '/0/{zero++} /1/{one++} END{printf "0: %d\n1: %d\n", zero, one}' "$@"
+}
+
+function insertLine() {
+	echo "[Info] insertLine, Add newText to the file from nthLine"
+	echo "[Args] #1 file @2 line @3 newText"
+    local file="$1" 
+    local lineX="$2" 
+    local newText="$3"
+    sed -i -e "/^$lineX$/a"$'\\\n'"$newText"$'\n' "$file"
+}
+
+function transfile () {
+    echo "[Info] transfile, Function that transverse a file."
 	awk '{
 	    if(NR==1) {
 	        for(i=1;i<=NF;i++) {
@@ -1118,6 +1205,85 @@ function cthreads () {
     fi
 }
 
+## https://en.wikipedia.org/wiki/Netcat
+## Test all connection avaiable of an ip or host address
+function ports() {
+	nc -vzu "$@" 1-65535 > ports_"$@"
+	cat ports_"$@"
+}
+
+########################################
+## Netcat Info -- IPV4                ##
+##https://en.wikipedia.org/wiki/Netcat##
+########################################
+## IPV6 VERSION https://www.freebsd.org/cgi/man.cgi?query=nc6&sektion=1&apropos=0&manpath=FreeBSD+9.0-RELEASE+and+Ports
+
+## Redirect localhost:99 to google:443
+function p2google() {
+	open http://localhost:12345/
+	ncat -l 12345 -c 'nc www.nthu.edu.tw 80'
+}
+
+## Example : nc for file transfer
+function ncfile() {
+	cat "$@" | nc -l 3333  & ## (on server, file sender) 
+	nc localhost 3333 > "$@"_data.get & ##(on client, file receiver)
+	cat  "$@"_data.get
+}
+
+## Example : Share index.html for only once.
+function ncwebshot() {
+	 { printf 'HTTP/1.0 200 OK\r\nContent-Length: %d\r\n\r\n' "$(wc -c < index.html)"; cat index.html; } | nc -l 8080
+}
+
+function ncclient() {
+	local IP="127.0.0.1"
+	local PORT="8877"
+	local SHARED_SECRET="RalicLo"
+
+	OPENSSL=$( wwich openssl | awk '{print $3}')
+	OPENSSL_CMD="$OPENSSL enc -a -A -aes-256-gcm"
+
+	while IFS= read -r MSG; do
+		echo "$MSG" | $OPENSSL_CMD -e -k "$SHARED_SECRET"
+		echo
+	done | \
+	nc "$IP" "$PORT" | \
+	while IFS= read -r REC; do
+		echo "From Server: $(echo "$REC" | $OPENSSL_CMD -d -k "$SHARED_SECRET")"
+	done
+}
+
+function ncserver() {
+	local IP="127.0.0.1"
+	local PORT="8877"
+	local SHARED_SECRET="RalicLo"
+
+	OPENSSL=$( wwich openssl | awk '{print $3}')
+	OPENSSL_CMD="$OPENSSL enc -a -A -aes-256-gcm"
+
+	while IFS= read -r MSG; do
+		echo "$MSG" | $OPENSSL_CMD -e -k "$SHARED_SECRET"
+		echo
+	done | \
+	nc -l "$PORT" | \
+	while IFS= read -r REC; do
+		echo "From Client: $(echo "$REC" | $OPENSSL_CMD -d -k "$SHARED_SECRET")"
+	done
+}
+
+## No wiresharks sniffing
+function nosharks() {
+	mkdir -p ~/.cache > /dev/null
+	local eIN=~/.cache/eIn;mkfifo $eIN
+	local eOUT=~/.cache/eOut;mkfifo  $eOUT
+	nc -l 995 -k > $eIN < $eOUT &
+ while true; do
+  openssl s_client -connect www.google.com:443 -quiet < $eIN > $eOUT
+ done
+ 	echo "[Info] Using Port 995 to proxy ssl connection for sniffing prevention"
+}
+
 ## Show Word counts in a file
 ## Usage  : mywc Filename
 ## Author : Ralic Lo
@@ -1126,6 +1292,19 @@ function mywc() {
      # cat $1 |tr ' ' '\n' | sort | uniq -c | awk '{print $2" "$1}'
      # cat $1 | tr [:space:] '\n' | grep -v "^\s*$" | sort | uniq -c |sort -r 
      awk '{for(w=1;w<=NF;w++) print $w}' $1 | sort | uniq -c | sort -nr | awk '{print $2" "$1}'
+}
+
+### bc : simple calculator
+# https://en.wikipedia.org/wiki/Bc_(programming_language)
+## Example :   a=10;calc? $a+3*5
+function calc () {
+	bc -l <<<  "$@"
+}
+## Check memory leak in a process() 
+## Requirement : brew install valgrind 
+## Example :  leak? ls -l
+function leak? () {
+	valgrind --leak-check=yes "$@"
 }
 
 ## GET IPs from log file.
@@ -1188,7 +1367,7 @@ function cip () {
 ## Usage cry filename password 
 ## Author : Ralic Lo
 function cry() {
-    openssl enc -in $1 -out cry.out -e -aes256 -k $2 --salt
+    openssl aes-256-cbc -a -salt -in $1 -out cry.out ## -k $2
     echo "Target File: " $1 " encrypted as cry.out"
 }
 
@@ -1196,7 +1375,7 @@ function cry() {
 ## Usage dontcry filename password 
 ## Author : Ralic Lo
 function dncry() {
-    openssl enc -in $1 -out dncry.out -d -aes256 -k $2
+    openssl aes-256-cbc  -d -a -in $1 -out dncry.out ##-k $2
     echo "Target File: " $1 " decrypted as dncry.out"
 }
 
@@ -1211,6 +1390,68 @@ function runmega() {
     rm megaf
     rm megad
 }
+
+
+## $1 weblink 
+function curls() { 
+	mkdir -p ~/.cache
+	local curlink=$1
+	curl $curlink > ~/.cache/curls.log
+	cat ~/.cache/curls.log | greplinks >curls.out
+	cat curls.out
+}
+
+function greplinks() {
+	grep -o '<a href=['"'"'"][^"'"'"']*['"'"'"]' | \
+	sed -e 's/^<a href=["'"'"']//' -e 's/["'"'"']$//' 
+}
+## Cordova Plguin AddOn Function
+function cpas() {
+	declare -a cordovaPlugins=(
+         ### Plugins https://goo.gl/eHEJwm
+         ## http/browser
+        "cordova-plugin-broadcaster"
+        "cordova-plugin-http"
+        "cordova-customplugin-inappbrowser"
+         ## camera / Automatic License Plate Recognition 
+        "cordova-plugin-camera"
+        #"cordova-plugin-openalpr"
+         ## audio/ Automatic speech recognition / NLP 
+        "cordova-plugin-audiotoggle"
+        "cordova-plugin-speechrecognition"
+        "cordova-plugin-apiai"
+         ## bluetooth /wifi
+        "cordova-plugin-bluetoothle"
+        "cordova-plugin-ble-central"
+        "cordova-plugin-ble"
+        "cordova-plugin-wifiinfo"
+         ## Sensors / Gyro / GPS /Google Map
+        "cordova-plugin-geolocation"
+        "cordova-plugin-gyroscope"
+        # "cordova-plugin-sso-facebook"
+        # "cdv-googlemaps"
+         ## IOT Connectivity
+        "cordova-plugin-blinkup "
+         ## Barcode 
+        "manateeworks-barcodescanner-v3"
+         ## Contact Books
+        "cordova-plugin-contacts-phonenumbers"
+         ## OpenCV
+        #"cordova-plugin-image-detection"
+    )
+	local N_CPAs=$((${#cordovaPlugins[@]}))
+    echo "Total Cordova libs  = " $N_CPAs
+    echo "" > ~/.cache/CordovaLibs.db 
+   	while [ $((N_CPAs )) -gt 0 ]   ;
+    do
+    	N_CPAs=$((N_CPAs-1))
+	    echo "${N_CPAs} ${cordovaPlugins[$N_CPAs]}" >> ~/.cache/CordovaLibs.db
+	    echo "[Info] cordova plugin add  ${cordovaPlugins[$N_CPAs]}"
+	    cordova plugin add  ${cordovaPlugins[$N_CPAs]}
+	done
+	cat ~/.cache/CordovaLibs.db
+}
+
 
 ## Prerequesite : cios, cadnd
 ## Author: Ralic Lo
@@ -1229,14 +1470,12 @@ function capp () {
         cd myApp
         cordova platform add ios
         cordova platform add android
-        cordova plugin add cordova-plugin-http
-        cordova plugin add cordova-plugin-camera
-        cordova plugin add cordova-plugin-bluetoothle
-        cordova plugin add cordova-plugin-ble-central
+
+        
         ## Default Icon from Rstudio.
         curl https://www.rstudio.com/wp-content/uploads/2014/06/RStudio-Ball.png >icon.png
         cordova-icon
-        curl 
+        cordova build
         ;;
         reacts)
         reacts
@@ -1246,7 +1485,8 @@ function capp () {
         curl https://www.rstudio.com/wp-content/uploads/2014/06/RStudio-Ball.png >icon.png
         cordova-icon
         curl http://www.iloveheartstudio.com/_cat/1500/world/continents/far-east/taiwan.png >splash.png
-        cordova-splash
+        cordova plugin add cordova-plugin-splashscreen-iphoneX-support
+        # cordova-splash
         ;;
     esac
 }
@@ -1318,13 +1558,13 @@ function cadnd() {
 ## Author: Ralic Lo
 function reacts () {
     echo "[Info] reacts, This script allows you to use react-native cli to run android project"
-    echo "options : (install) | (init) | (web) | (ios) | (android)"
+    echo "options : (setup) | (install) | (init) | (web) | (ios) | (android)"
     read option
     case $option in 
         setup)
             echo "[Info] Install React-native-cli"
             npm install -g react-native-cli
-            echo "[Info] Install Sutiable Android build tools"
+            echo "[Info] Install Suitable Android build tools"
             android list sdk -a 
             version=$(android list sdk -a | grep 23.0.1 | awk '{print substr ($1,0,1)}')
             android update sdk -a -u -t $version
@@ -1344,6 +1584,24 @@ function reacts () {
             open http://localhost:8081
         ;;    
         ios)
+            cd reactApp
+            react-native run-ios
+        ;;
+        android)
+            cd reactApp
+            react-native run-android
+        ;;
+        *)
+        ;;
+    esac
+}
+
+function rise() {
+	echo "[Info] rise, run react-native apps"
+    echo "options : (ios) | (android)"
+    read option
+    case $option in 
+		ios)
             cd reactApp
             react-native run-ios
         ;;
@@ -1788,7 +2046,8 @@ function oacurl() {
 
 export gproject=mesos-1369
 export gfolder=daydream
-
+source ~/work/gcloud/google-cloud-sdk/path.bash.inc
+source ~/work/gcloud/google-cloud-sdk/completion.bash.inc
 function ggit() {
     echo "options: (load) gcloud | (init) credential |  (info) project/repository  "
     echo "options: (add) google  | (push) to google  |  (clone) from google "
@@ -2083,7 +2342,7 @@ function mockmoe() {
 }
 
 ## This script is powerful touch, to enforce creating a file in the path 
-ptouch() {
+function ptouch() {
     for p in "$@"; do
         _dir="$(dirname -- "$p")"
         [ -d "$_dir" ] || sudo mkdir -p -- "$_dir"
@@ -2095,7 +2354,7 @@ ptouch() {
 ## https://www.guyrutenberg.com/2014/05/02/make-offline-mirror-of-a-site-using-wget/
 ## RATE LIMIT : ‐‐limit-rate=200k ‐‐wait=60
 ## Simplified : wget -mkEpnp http://example.org
-uberget() {
+function uberget() {
 ## Other agents: https://support.google.com/webmasters/answer/1061943?hl=en
 ## "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.8; rv:21.0) Gecko/20100101 Firefox/21.0"
 ## Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.96 Mobile Safari/537.36 
@@ -2107,7 +2366,7 @@ user_agent = "Mozilla/5.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) AppleWebKit/
 referer = /
 robots = off
 EOF
-    wget ‐‐random-wait -e --mirror --adjust-extension --page-requisites  --convert-links --no-parent -r -x "$1"
+    wget ‐‐random-wait --mirror --adjust-extension --page-requisites  --convert-links --no-parent -r -x "$1"
 }
 
 ## This script is to build Java program using gradle with all cores.
@@ -2140,7 +2399,7 @@ new100() {
 }
 
 ## This script helps update android sdk to the latest
-adup() {
+function adup() {
     android update sdk --no-ui --all
 }
 
@@ -2158,7 +2417,7 @@ adup() {
 #     });
 # });
 
-golive() {
+function golive() {
     gulp_loc=g
     yes| cp ~/$(echo $gulp_loc)/gulpfile.js .
     npm install gulp gulp-live-server live-server --save
@@ -2167,7 +2426,7 @@ golive() {
 
 ## this script help you find (lat, lon) coordinate of a location
 
-gps () {
+function gps () {
     if [ "$#" -lt 1 ]
     then
       echo "input error"
@@ -2292,14 +2551,28 @@ function gitpy3 () {
     echo 'gh pr --submit $owner --title "Convert to Python3" --description " using : find . -name "*.py" | xargs 2to3-3.6 -w"'
  }
 
-## This script help remove the last character of a file, whatever it is 
+# 	echo "This function help remove the last character of a file, whatever it is"
 function nolast() {
-    sed 's/.$//' "$@" > "$@".nolast
+    sed 's/.$//' 
+}
+# 	echo "This function help remove the first character of a file, whatever it is"
+
+function nofirst() {
+    sed 's/^..//' 
+}
+# 	echo "This function removes all empty lines in the file"
+function noempty() {
+	sed '/^$/d'
 }
 
-## This script help remove the first character of a file, whatever it is 
-function nofirst() {
-    sed 's/^..//'  "$@" > "$@".nofirst
+function readvalue() {
+	value=$(<$1)
+	echo "[Info] Read file"$@"into variable $value :" $value
+}
+
+## This function help trim the imput
+function trim() {	
+	awk '{$1=$1};1' "$@"
 }
 
 function idf () {
@@ -2371,7 +2644,8 @@ function botok(){
         gitmsg
         cd $returnFolder >>/dev/null
     else 
-        cat message.txt >> ~/work/tmpbot/failed.log
+        mkdir -p ~/work/bottles/tmpbot/.failed >>/dev/null
+        cat message.txt >> ~/work/bottles/tmpbot/.failed/failed.log
     fi
 }
 
@@ -2462,9 +2736,65 @@ function cspace() {
     else echo "Sorry, you don't have support for User Namespaces"; 
     fi
 }
+
+function alldone() {
+	echo "[Usage] To check if there is runnning background jobs in current subshell"
+	if [ $(jobs|wc -l) -eq 0 ] ; 
+		then 
+			echo "[Results] No background job running in current shell";
+			return true; 
+		else 
+			echo "[Results] "$(jobs |wc -l)" background_jobs running."
+			return false;
+	fi
+}
+
+function kouser() {
+    echo "[Info] Remove and logout a user's all jobs"
+    killall -u "$@"
+}
+
+function kvnc() {
+    ps aux | grep vnc | grep  desktop | awk '{print "kill "$2}' > kvnc.pid
+    . kvnc.pid
+}
+
+function nobgjobs() {
+	echo "[Info] Removed all background jobs"
+    BGJOBS="$(jobs -p)";
+    if [ -n "${BGJOBS}" ]; 
+    	then
+	        kill -KILL ${BGJOBS};
+    fi
+}
+
+# function addjobs() {
+# 	echo "[Info] Add backround jobs if nothing is in background: " $@
+# 	while [ alldone ] 
+# 		do
+# 		$@ &
+# 		break
+# 	done 
+# }
+
+function countchar() {
+	echo "[Usage]  countchar 'filename' 'character'"
+	echo "[Output] numbers of repated patttern"  
+    local search=$2
+	local filename=$1
+	cat $filename | sed s/[^${search}]//g  | awk '{ print length }' > count_$search.txt
+	cat count_$search.txt
+}
+
+function joincsv() {
+	echo "[Usage] Join multiple file as ',' comma splited file"
+	paste -d"," "$@" > comma_csv.txt
+	cat  comma_csv.txt
+}
+
 function findtxt() {
     echo "[Usage] findtxt about 'keyword' recursively in current folder"
-    echo "[Info] example : findtxt '/usr/bin/env python'"
+    echo "[Info] example : findtxt '/usr/bin/env python' "
     echo "[Alt] brew install ack ; ack '/usr/bin/env python' "
     echo "[Output] file name , line number , text details, result in findtxt.log"
     grep -Rnw "$@" > findtxt.raw
@@ -2478,11 +2808,14 @@ function cleantxt() {
     echo "[Info]~/Library/Caches/??? contains data caches, logs, local history, etc. (large size)"
     echo "[Info]~/Library/Logs/??? contains logs."
     rm findtxt.*
+    rm comma_csv.txt
+    rm count_*.txt
 }
 
 function replacetxt() {
     echo "[Usage] replacetxt  'old' 'new' 'filename'"
     echo "[Info] example : findtxt '/usr/bin/env python'"
+    echo "[Notes] remove the g"
     local search=$1
     local replace=$2
     local filename=$3
@@ -2502,6 +2835,28 @@ function gitmsg() {
 function gitsend() {
     git commit -F .git/COMMIT_EDITMSG;git push
 }
+
+function gitfind() {
+	echo "[Info] This script helps searching git history using git"
+	git log --grep "$@"
+	## Ex. gitfind bitcoin
+}
+
+function gitreview() {
+	if [[ $# -eq 0 ]] ; then
+        echo "[Info] This script helps review git commit logs since specified date"
+		echo "[Example] gitreview '2017-12-11' '--grep bitcoin' , Default Date=2017-01-01"
+		git --no-pager log --graph --pretty=format:"%ad %C(yellow)%H%C(cyan)%C(bold) %C(cyan)(%cr)%Creset %C(green)%ce%Creset %s" --date=iso --since=2017-01-01
+	else 
+        git --no-pager log --graph --pretty=format:'%ad %C(yellow)%H%C(cyan)%C(bold) %C(cyan)(%cr)%Creset %C(green)%ce%Creset %s' --date=iso --since="$1" $2 
+    fi
+}
+
+function gitlogs() {
+	gitreview | sed '1,2d' > ~/.cache/bot.commit
+	cat -n ~/.cache/bot.commit |cut -c1-150
+}
+
 function gitarget() {
     echo "[Usage] 'gitarget GithubTreeUrl', here the commited url is from blob of github"
     echo "[Example] gitarget https://github.com/ralic/python3.62mac/tree/5394bbc291eb816e7cb05a195ed93b394ad14daf"
@@ -2514,6 +2869,12 @@ function gitarget() {
 function gitcut() {
     echo "[Info] Cutting off commit from history "
     git rebase -i "$@"
+}
+
+function brewhistory() {
+	local DATE=$1
+	local BOT_PATH=~/work/bottles/tmpbot/commit.log
+	gitreview '2017-12-11' > tmpbot/tocut
 }
 
 function gitgetsubs() {
@@ -2677,7 +3038,11 @@ function xbench() {
     cd ..  >>  /dev/null
     rm -rf xbenchTest
 }
-# echo  $(($PACORES - 1))
+
+function 49zdir() {
+	zip -r "$@".zip "$@" -s 49m
+}
+
 function zipdir() { 
     zip -r "$1".zip "$1" > /dev/null
     du -sh $1
@@ -2827,12 +3192,15 @@ alias ng1="npm list -g --depth=1"
 ## Note: It's good for reinstalled packages from developer's brew repository
 ## git clone https://github.com/ralic/cellar-backup
 
-function rebrew () {
+function rebrewall () {
     unset PYTHONPATH
     brew list | grep -v gettext | grep -v gcc| grep -v llvm| xargs brew deps --tree
     brew list | xargs brew reinstall --build-bottle
-    brew upgrade
+    # brew upgrade
     ## --overwrite --force 
+}
+function rebrewa() {
+  brew reinstall $1 --build-bottle --no-sandbox
 }
 
 function relinkbrew () {
@@ -2976,7 +3344,7 @@ export WELD_HOME="~/.weld"
 ## Reset lib prioirty
 alias airport="/System/Library/PrivateFrameworks/Apple80211.framework/Resources/airport"
 alias nets="/usr/sbin/networksetup -listallhardwareports"
-export PATH="$UsrPATH/$UsrNAME/work/.npm/bin/:$PATH"
+export PATH="$UsrPATH/$UsrNAME/work/.npm/bin:$PATH"
 
 ## Customized / Shared package path for multi-OS version
 export PATH="$OPT_PREFIX/opt/python3/Frameworks/Python.framework/Versions/3.6/bin:$PATH"
@@ -2987,7 +3355,14 @@ export PATH="$OPT_PREFIX/opt/python3/Frameworks/Python.framework/Versions/3.6/bi
 # ln -s -f /Volumes/data/WorkSpace/python/3.6/site-packages /usr/local/lib/python3.6/site-packages 
 # ln -s -f /usr/local/lib/python3.6/site-packages /Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages
 # ln -s -f /usr/local/bin/glibtoolize  /usr/local/bin/libtoolize
-alias gopy3="cd /usr/local/lib/python3.6/site-packages"
+function gopy3() {
+	if [ "$(uname -s)" == "Linux" ]; then
+		cd "/home/linuxbrew/.linuxbrew/lib/python3.6/site-packages"
+	fi
+	if [ "$(uname -s)" == "Darwin" ]; then
+		cd "/usr/local/lib/python3.6/site-packages"
+	fi
+}
 alias gonpm="cd /usr/local/lib/node_modules"
 
 ### List of Setting
@@ -3057,24 +3432,45 @@ function linkopts() {
 declare -a liblist=(
     # "openssl" 
     # "openssl@1.1" 
-    # "llvm" "ncurses" 
-    # "lapack" "openblas"
+    "llvm" "ncurses" 
+    "lapack" "openblas"
     # "boost" "boost-mpi" "boost-python"
     # "open-mpi" "tbb"
     # "xz" "zlib" "bison" 
     # "gettext"  				## May cause mac running to infinite loop
-    # "gmp" "mpfr"  			## GCC related
-    #"gcc" "bzip2" "readline"
+    # "gmp" "mpfr" "isl" "libmpc"			## GCC related
+    # "gcc" "bzip2" "readline"
     # "libkml" "libtool" "libunistring" "libiconv"
     # "binutils" "sqlite" "icu4c"
     # "thrift" "libarchive"  "aws-sdk-cpp" ## for osquery
-    # "opencl" "grt"
+    "opencl" "grt"
     # "suite-sparse" "valgrind"
     # "python3"
     # "rtmpdump" "libmetalink" ## Powerful curl related
     )
 
 function printlibs {
+	## FILO printlibs
+    mkdir -p ~/.cache > /dev/null
+    Nliblist=$((${#liblist[@]}))
+    echo "Total libs  = " $Nliblist
+    echo "" > ~/.cache/brewlibs.db 
+    echo "" > ~/.cache/brewlibs.links
+    while [ $((Nliblist )) -gt 0 ]   ;
+    do
+    Nliblist=$((Nliblist - 1))
+    echo "$Nliblist ${liblist[$Nliblist]}" 
+    echo ${Nliblist}" "${liblist[$Nliblist]} >> ~/.cache/brewlibs.db
+    echo linkopts ${liblist[$Nliblist]} >> ~/.cache/brewlibs.links
+    done
+    echo "~/.cache/brewlibs.db:"
+    cat ~/.cache/brewlibs.db
+    echo "~/.cache/brewlibs.links:"
+    cat ~/.cache/brewlibs.links
+}   
+
+function printlibs2 {
+	## FIFO printlibs , not working in dash.
     mkdir -p ~/.cache > /dev/null
     Nliblist=${#liblist[@]}
     echo "Total libs  = " $Nliblist
@@ -3094,16 +3490,6 @@ function printlibs {
 function bootlibs {
     . ~/.cache/brewlibs.links
     getflags
-}
-
-function kouser() {
-    echo "[Info] Kill and Logout a User"
-    skill -KILL -u tiger
-}
-
-function kvnc() {
-    ps aux | grep vnc | grep  desktop | awk '{print "kill "$2}' > kvnc.pid
-    . kvnc.pid
 }
 
 function keylibs() {
@@ -3134,19 +3520,15 @@ function morelibs(){
 #   ------------------------------------------------------------
 #   Brew first Paths : Comment them out for fresh system.
 #   ------------------------------------------------------------
-# export PATH="/usr/local/bin:/usr/local:/usr/local/sbin:/usr/local/include:/usr/local/lib:/opt/aws/bin:$PATH"
-# export PATH="$BREW_PREFIX/bin:$PATH"
-# export PATH="$BREW_PREFIX/sbin:$PATH"
-# export PATH="$BREW_PREFIX/lib:$PATH"
-# export PATH="$BREW_PREFIX/include:$PATH"
-# export MANPATH="$BREW_PREFIX:/share/man:$MANPATH"
-# export INFOPATH="$BREW_PREFIX/share/info:$INFOPATH"
+export PATH="/usr/local/bin:/usr/local:/usr/local/sbin:/usr/local/include:/usr/local/lib:/opt/aws/bin:$PATH"
+export PATH="$BREW_PREFIX/bin:$PATH"
+export PATH="$BREW_PREFIX/sbin:$PATH"
+export PATH="$BREW_PREFIX/lib:$PATH"
+export PATH="$BREW_PREFIX/include:$PATH"
+export MANPATH="$BREW_PREFIX:/share/man:$MANPATH"
+export INFOPATH="$BREW_PREFIX/share/info:$INFOPATH"
 export LDFALGS="-L/home/linuxbrew/.linuxbrew/lib $LDFALGS"
 export CPPFALGS="-I/home/linuxbrew/.linuxbrew/lib $CPPFALGS"
-setcc
-# keylibs
-printlibs > /dev/null
-bootlibs >/dev/null
 
 ### CMAKE FLAGS SUPPORT
 export CMAKE_CXX_FLAGS="-isystem $CPPFLAGS /usr/local/include" 
@@ -3155,18 +3537,21 @@ export CMAKE_C_FLAGS="-Wall -Ofast  $MATHFLAGS"
 export CMAKE_CXX_FLAGS_DEBUG="-Wall -Ofast $MATHFLAGS"
 export PROJ_LIB="~/work/proj"
 
+### flutter support
+export PATH="~work/flutter/bin:~/work/flutter/bin:$PATH"
+
 function cumakes() {
     ##\ /usr/include 
     cmake -G 'Unix Makefiles' -DCMAKE_CXX_FLAGS=
     cmake -G 'Unix Makefiles' -DCMAKE_CXX_FLAGS=-isystem -DCMAKE_INSTALL_PREFIX=/usr/local/Cellar/$1
     make -j$PACORES -k
 }
-
-
+START_UP@END
 
 # Finished adapting your PATH environment variable for use with MacPorts.
 # export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
-#### Completed OS related script #### 
+
+#### MAc OS related script #### 
 # export PATH="$PATH:/Volumes/data/WorkSpace"
     ## For mac -- To view du like linux 
     # function duh () {
@@ -3182,3 +3567,4 @@ function cumakes() {
 # export PATH="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/4.2/include:$PATH"
 ##/bin/cp /usr/local/Cellar/gettext/0.19.8.1/lib/libintl.8.dylib /usr/local/lib/libintl.8.dylib
 
+#PATH=/Users/ralic/work/flutter/flutter/bin:/Users/ralic/work/flutter/flutter/bin:/usr/local/opt/llvm/include:/usr/local/opt/ncurses/include:/usr/local/opt/lapack/include:/usr/local/opt/openblas/include:/usr/local/opt/opencl/include:/usr/local/opt/grt/include:~work/flutter/bin:~/work/flutter/bin:/usr/local/include:/usr/local/lib:/usr/local/sbin:/usr/local/bin:/usr/local/bin:/usr/local:/usr/local/sbin:/usr/local/include:/usr/local/lib:/opt/aws/bin:/usr/local/opt/opt/python3/Frameworks/Python.framework/Versions/3.6/bin:/Users//work/.npm/bin:/Users/ralic/.cargo/bin:/Volumes/data/WorkSpace/gcloud/google-cloud-sdk/bin:~/work/.npm/bin:/Library/Developer/Toolchains/swift-latest.xctoolchain/usr/bin:/Library/Developer/CommandLineTools/usr/bin:/usr/local/opt/qt/bin:/Applications/RStudio.app/Contents/MacOS:/opt/X11/bin:/usr/local/cuda/bin:/usr/local/cuda/nvvm/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/X11/bin:/Users/ralic/Library/Android/sdk/platform-tools:/Users/ralic/Library/Android/sdk/tools:/Users/ralic/golang/bin:/usr/local/opt/go/libexec/bin:/usr/local/opt/apache-spark/libexec:/usr/local/opt/apache-spark/libexec/sbin:/usr/local/mysql/bin:/bin:/bin
